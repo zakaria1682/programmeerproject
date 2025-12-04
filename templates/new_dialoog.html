@@ -1,0 +1,87 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Nieuwe dialoog
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.tiny.cloud/1/nvg3ndzh1qg2hmfddgvv090pum9okoxshvqwlee6vrthjnfo/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+<script>
+  tinymce.init({
+    selector: '#body',
+    plugins: 'link lists image media code emoticons',
+    menubar: false,
+    toolbar: 'undo redo | blocks | bold italic | ' +
+             'alignleft aligncenter alignright | bullist numlist | ' +
+             'link image media emoticons | code',
+    automatic_uploads: true,
+    images_upload_url: "{{ url_for('upload_image') }}",
+    images_upload_credentials: true,
+    media_live_embeds: true,
+    extended_valid_elements: 'iframe[src|frameborder|style|scrolling|class|width|height|name|align|allowfullscreen]'
+  });
+</script>
+{% endblock %}
+
+{% block main %}
+
+<div class="container mt-4" style="max-width: 900px; color:#f9fafb;">
+
+    <h1 class="mb-3">Nieuwe dialoog</h1>
+
+    <div class="mt-2 p-3 rounded"
+         style="background: rgba(15,23,42,0.96);
+                border: 1px solid rgba(148,163,253,0.6);
+                box-shadow: 0 22px 60px rgba(15,23,42,0.9);">
+
+        <form method="post" enctype="multipart/form-data">
+
+            <div class="mb-3">
+                <label for="title" class="form-label">Titel van de dialoog</label>
+                <input type="text"
+                       class="form-control"
+                       id="title"
+                       name="title"
+                       value="{{ title or '' }}"
+                       required
+                       maxlength="255">
+            </div>
+
+            <div class="mb-3">
+                <label for="thumbnail" class="form-label">
+                    Thumbnail (afbeelding, gif of video)
+                </label>
+                <input type="file"
+                       class="form-control"
+                       id="thumbnail"
+                       name="thumbnail"
+                       accept="image/*,video/*">
+                <small class="form-text text-muted">
+                    Wordt getoond als thumbnail in het dialoogoverzicht.
+                </small>
+            </div>
+
+            <div class="mb-3">
+                <label for="body" class="form-label">
+                    Startpost / toelichting (optioneel)
+                </label>
+                <textarea id="body"
+                          name="body">{{ body or '' }}</textarea>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <a href="{{ url_for('dialoog') }}" class="btn btn-outline-light">
+                    Annuleren
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    Start dialoog
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+{% endblock %}

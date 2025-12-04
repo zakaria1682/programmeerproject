@@ -1,0 +1,440 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Blog
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .blog-card-link {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .blog-card {
+        background: rgba(15,23,42,0.9);
+        border: 1px solid rgba(148,163,253,0.5);
+        box-shadow: 0 0 12px rgba(0,0,0,0.45);
+        border-radius: 16px;
+        padding: 14px 18px;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+
+    .blog-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(129,140,248,0.9);
+        box-shadow: 0 20px 40px rgba(15,23,42,0.95),
+                    0 0 20px rgba(129,140,248,0.55);
+    }
+
+    .blog-thumb-large {
+        width: 210px;
+        height: 130px;
+        border-radius: 18px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: radial-gradient(circle at 30% 20%, #1f2937, #020617);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 6px;
+        margin-right: 18px;
+    }
+
+    .blog-thumb-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .blog-thumb-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 20%, #facc15, #b45309);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #0f172a;
+        margin-right: 10px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .blog-thumb-avatar-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .blog-meta {
+        font-size: 0.8rem;
+        color: rgba(156,163,175,0.9);
+    }
+
+    .blog-snippet {
+        font-size: 0.9rem;
+        color: rgba(209,213,219,0.9);
+        margin-top: 4px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .blog-card-main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .blog-author-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+
+    .blog-layout {
+        display: flex;
+        align-items: flex-start;
+        gap: 28px;
+        margin-top: 10px;
+    }
+
+    .blog-main {
+        flex: 1 1 auto;
+    }
+
+    .blog-sidebar {
+        flex: 0 0 360px;
+        max-width: 280px;
+        margin-left: auto;
+        margin-top: 4px;
+    }
+
+    .blog-divider {
+        width: 2px;
+        align-self: stretch;
+        background: linear-gradient(
+            to bottom,
+            transparent,
+            rgba(148, 163, 253, 0.7),
+            transparent
+        );
+    }
+
+    .blog-sidebar-card {
+        background: rgba(15,23,42,0.9);
+        border-radius: 16px;
+        border: 1px solid rgba(148,163,253,0.5);
+        box-shadow: 0 0 12px rgba(0,0,0,0.45);
+        padding: 16px 18px;
+        width: 100%;
+    }
+
+    .blog-search-input {
+        background: rgba(15,23,42,0.95);
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,253,0.6);
+        color: #e5e7eb;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .blog-search-input:focus {
+        box-shadow: 0 0 0 0.15rem rgba(129,140,248,0.6);
+        border-color: rgba(129,140,248,0.9);
+        background: rgba(15,23,42,0.98);
+        color: #f9fafb;
+    }
+
+    .blog-sidebar button.nav-secondary.primary {
+        min-width: auto !important;
+        padding: 8px 16px;
+    }
+
+    .blog-new-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 14px 20px;
+        border-radius: 999px;
+
+        background: linear-gradient(135deg, #fb923c, #ec4899);
+        border: 1px solid rgba(251, 146, 60, 0.8);
+
+        color: #f9fafb;
+        font-size: 1.05rem;
+        font-weight: 600;
+        text-decoration: none;
+
+        box-shadow:
+            0 0 0 1px rgba(248, 250, 252, 0.25),
+            0 18px 45px rgba(248, 113, 113, 0.55);
+        margin-bottom: 12px;
+        transition: 0.12s ease;
+    }
+
+    .blog-new-btn:hover {
+        filter: brightness(1.06);
+        transform: translateY(-2px);
+    }
+
+    .blog-actions {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 0.85rem;
+        color: rgba(156,163,175,0.95);
+    }
+
+    .blog-actions-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .blog-score-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(15,23,42,0.95);
+        border: 1px solid rgba(55,65,81,0.9);
+    }
+
+    .blog-score-arrow {
+        font-size: 0.95rem;
+        opacity: 0.8;
+    }
+
+    .blog-score-value {
+        min-width: 32px;
+        text-align: center;
+        font-weight: 600;
+        color: #e5e7eb;
+    }
+
+    .blog-comments-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(15,23,42,0.95);
+        border: 1px solid rgba(55,65,81,0.9);
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .blog-share-btn {
+        margin-left: auto;
+        padding: 4px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,253,0.7);
+        background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,64,175,0.9));
+        color: #e5e7eb;
+        font-size: 0.8rem;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .blog-share-btn:hover {
+        filter: brightness(1.08);
+    }
+
+    @media (max-width: 992px) {
+        .blog-layout {
+            flex-direction: column;
+        }
+        .blog-divider {
+            display: none;
+        }
+        .blog-main,
+        .blog-sidebar {
+            flex: 1 1 auto;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-share-url]").forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            const url = this.dataset.shareUrl;
+            const title = this.dataset.shareTitle || document.title;
+
+            if (navigator.share) {
+                navigator.share({ title: title, url: url }).catch(function () {});
+            } else {
+                window.prompt("Kopieer deze link om te delen:", url);
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}
+
+{% block main %}
+
+<div class="mt-4" style="color: #f9fafb;">
+
+    <div class="mb-3">
+        <h1 class="mb-0">Blog</h1>
+    </div>
+
+    <div class="blog-layout">
+        <div class="blog-main">
+            {% if posts %}
+                <div class="mt-1 d-flex flex-column gap-3">
+                    {% for post in posts %}
+                        {% set stats = thread_stats.get(post.id) if thread_stats is defined else None %}
+                        <div class="blog-card">
+                            <div class="d-flex justify-content-between align-items-start">
+
+                                <a href="{{ url_for('view_blog', post_id=post.id) }}"
+                                   class="blog-card-link flex-grow-1">
+                                    <div class="d-flex">
+
+                                        <div class="blog-thumb-large">
+                                            {% if post.thumbnail_image %}
+                                                <img src="{{ url_for('static', filename='blog_thumbs/' ~ post.thumbnail_image) }}"
+                                                     alt="Thumbnail">
+                                            {% else %}
+                                                <span>Geen thumbnail beschikbaar</span>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="blog-card-main">
+                                            <div class="blog-author-row">
+                                                <div class="blog-thumb-avatar">
+                                                    {% if post.author.profile_image %}
+                                                        <img src="{{ url_for('static', filename='profile_pics/' ~ post.author.profile_image) }}"
+                                                             alt="Profielfoto"
+                                                             class="blog-thumb-avatar-img">
+                                                    {% else %}
+                                                        {{ (post.author.first_name or post.author.username)[0] | upper }}
+                                                    {% endif %}
+                                                </div>
+                                                <div class="blog-meta">
+                                                    {{ post.author.full_name or post.author.username }}
+                                                    ·
+                                                    {{ post.created_at|nl_datetime }}
+                                                </div>
+                                            </div>
+
+                                            <h4 class="mb-1">{{ post.title }}</h4>
+
+                                            <p class="blog-snippet mb-0">
+                                                {{ post.content | striptags | truncate(220, True, '…') }}
+                                            </p>
+                                        </div>
+
+                                    </div>
+                                </a>
+
+                                {% if user and (user.id == post.author_id
+                                                or user.has_role('admin')
+                                                or user.has_role('superadmin')) %}
+                                    <div class="ms-3 d-flex flex-row gap-2 align-self-start">
+                                        <a href="{{ url_for('edit_blog', post_id=post.id) }}"
+                                           class="btn btn-outline-light btn-sm">
+                                            Bewerken
+                                        </a>
+                                        <a href="{{ url_for('delete_blog', post_id=post.id) }}"
+                                           class="btn btn-outline-danger btn-sm"
+                                           onclick="return confirm('Weet je zeker dat je deze blog wilt verwijderen?');">
+                                            Verwijderen
+                                        </a>
+                                    </div>
+                                {% endif %}
+
+                            </div>
+
+                            <div class="blog-actions">
+                                {% if stats %}
+                                    <div class="blog-actions-left">
+                                        <div class="blog-score-pill">
+                                            <span class="blog-score-arrow">▲</span>
+                                            <span class="blog-score-value">{{ stats.score }}</span>
+                                            <span class="blog-score-arrow">▼</span>
+                                        </div>
+                                        <a href="{{ url_for('view_thread', thread_id=stats.thread_id) }}#comments"
+                                           class="blog-comments-link">
+                                            <span>💬</span>
+                                            {{ stats.comment_count }} reacties
+                                        </a>
+                                    </div>
+                                {% endif %}
+                                <button type="button"
+                                        class="blog-share-btn"
+                                        data-share-url="{{ url_for('view_blog', post_id=post.id, _external=True) }}"
+                                        data-share-title="{{ post.title }}">
+                                    Delen
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>Er zijn nog geen blogposts.</p>
+            {% endif %}
+        </div>
+
+        <div class="blog-divider"></div>
+
+        <div class="blog-sidebar">
+
+            {% if user and user.has_role('author') %}
+                <a href="{{ url_for('new_blog') }}" class="blog-new-btn">
+                    Maak nieuwe blog
+                </a>
+            {% endif %}
+
+            <div class="blog-sidebar-card">
+                <h5 class="mb-3">Zoek in blogarchief</h5>
+
+                <form method="get" action="{{ url_for('blog') }}" class="d-flex gap-2 mb-2">
+                    <input type="text"
+                           name="q"
+                           class="form-control blog-search-input"
+                           placeholder="Zoek op titel, tekst of auteur"
+                           value="{{ search_query or '' }}">
+                    <button type="submit" class="nav-secondary primary" style="padding: 8px 14px;">
+                        Zoeken
+                    </button>
+                </form>
+
+                {% if search_query %}
+                    <p class="mb-0" style="font-size:0.8rem; color:rgba(156,163,175,0.9);">
+                        Resultaten voor: <strong>"{{ search_query }}"</strong>
+                        {% if not posts %}
+                            <br>Geen blogs gevonden voor deze zoekopdracht.
+                        {% endif %}
+                    </p>
+                {% else %}
+                    <p class="mb-0" style="font-size:0.8rem; color:rgba(156,163,175,0.9);">
+                        Gebruik het zoekveld hierboven om in het blogarchief te zoeken.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+
+    </div>
+
+</div>
+
+{% endblock %}

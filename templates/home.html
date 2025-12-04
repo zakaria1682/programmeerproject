@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block main %}
+
+<div class="container-fluid">
+    <div class="row">
+
+        <div class="col-md-7">
+            <h1>Welkom bij Accountantzijn.nl</h1>
+
+            <p>
+                Dit wordt jouw platform voor bloggen, opiniepeilingen en verdiepende dialogen
+                over het accountantsvak. Zonder account kun je rondkijken, maar om mee te doen
+                (bloggen, stemmen, reageren) vragen we je om je te registreren.
+            </p>
+
+            <p>
+                Gebruik de knoppen bovenaan om straks naar de blog, opiniepagina of dialoog te gaan.
+                Beginnen? Maak een account aan of log in met je bestaande gegevens.
+            
+            </p>
+        </div>
+
+        <div class="col-md-5 d-flex flex-column align-items-end" style="margin-left: -30px;">
+
+            <img src="{{ url_for('static', filename='images/accountant.jpeg') }}"
+                 alt="Accountant"
+                 class="home-image"
+                 style="max-width: 380px; height: auto; border-radius: 18px;">
+
+            <p class="photo-quote" style="
+                margin-top: 10px;
+                margin-left: 150px;
+                font-size: 0.95rem;
+                max-width: 200px;
+                text-align: center;
+                font-style: italic;
+                line-height: 1.4;">
+                “Instellingen bestaan omdat we elkaar niet volledig vertrouwen.”
+
+
+            <img src="{{ url_for('static', filename='images/limperg.png') }}"
+                alt="Limperg"
+                class="home-image"
+                style="max-width: 190px; height: auto; border-radius: 18px; margin-top: 35px;">
+
+            <p class="photo-quote" style="
+                margin-top: 10px;
+                font-size: 0.95rem;
+                color: #ffffff;
+                max-width: 200px;
+                text-align: center;
+                font-style: italic;
+                line-height: 1.4;">
+                “De accountant ontleent zijn gezag aan het vertrouwen dat de samenleving hem schenkt.” – Prof. Dr. Limperg
+            </p>
+
+            </p>
+
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

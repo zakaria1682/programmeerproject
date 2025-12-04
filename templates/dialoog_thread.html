@@ -1,0 +1,865 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Dialoog · {{ thread.title }}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+
+    .thread-media {
+        max-width: 700px;
+        width: 100%;
+        margin: 16px auto 12px;
+    }
+
+    .thread-media img,
+    .thread-media video {
+        width: 100%;
+        height: auto;
+        border-radius: 16px;
+        display: block;
+    }
+
+    .thread-card {
+        background: rgba(15,23,42,0.9);
+        border: 1px solid rgba(148,163,253,0.5);
+        box-shadow: 0 0 12px rgba(0,0,0,0.45);
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin-bottom: 18px;
+    }
+
+    .blog-thumb {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 20%, #facc15, #b45309);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1.3rem;
+        color: #0f172a;
+        margin-right: 14px;
+        overflow: hidden;
+    }
+
+    .blog-thumb-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .tts-controls {
+        margin: 12px 0 4px 0;
+        padding: 10px 12px;
+        border-radius: 999px;
+        background: rgba(15,23,42,0.95);
+        border: 1px solid rgba(148,163,253,0.5);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.8rem;
+        color: rgba(209,213,219,0.9);
+    }
+
+    .tts-controls button {
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,253,0.7);
+        background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,64,175,0.9));
+        color: #e5e7eb;
+        padding: 4px 10px;
+        font-size: 0.78rem;
+        cursor: pointer;
+    }
+
+    .tts-controls button:hover {
+        filter: brightness(1.1);
+    }
+
+    .tts-speed-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+    }
+
+    .tts-speed-wrapper input[type="range"] {
+        width: 80px;
+    }
+
+    .thread-meta {
+        font-size: 0.8rem;
+        color: rgba(156,163,175,0.9);
+        margin-bottom: 8px;
+    }
+
+    .comment-tree {
+        margin-top: 10px;
+    }
+
+    .comment-box {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .comment-vote {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 0.8rem;
+        color: rgba(156,163,175,0.9);
+    }
+
+    .comment-vote form {
+        margin: 0;
+    }
+
+    .comment-vote button {
+        border: none;
+        background: transparent;
+        color: rgba(148,163,253,0.9);
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .comment-vote button:hover {
+        color: #a855f7;
+    }
+
+    .comment-score {
+        margin: 2px 0;
+    }
+
+    .comment-body-card {
+        flex: 1;
+        background: rgba(15,23,42,1);
+        border-radius: 10px;
+        border: 1px solid rgba(55,65,81,0.9);
+        padding: 8px 10px;
+        font-size: 0.9rem;
+    }
+
+    .comment-meta {
+        font-size: 0.75rem;
+        color: rgba(156,163,175,0.9);
+        margin-bottom: 2px;
+    }
+
+    .comment-actions {
+        font-size: 0.75rem;
+        color: rgba(156,163,175,0.9);
+        margin-top: 4px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .comment-actions a,
+    .comment-actions button.btn-link-like {
+        color: rgba(148,163,253,0.9);
+        text-decoration: none;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        font-size: 0.75rem;
+    }
+
+    .comment-actions a:hover,
+    .comment-actions button.btn-link-like:hover {
+        text-decoration: underline;
+    }
+
+    .comment-children {
+        margin-left: 26px;
+        border-left: 1px solid rgba(55,65,81,0.8);
+        padding-left: 10px;
+        margin-top: 4px;
+    }
+
+    .reply-form {
+        margin-top: 6px;
+        margin-bottom: 10px;
+    }
+
+    .new-comment-card {
+        background: transparent;
+        border-radius: 0;
+        border: none;
+        padding: 0;
+        margin-top: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .comment-children {
+            margin-left: 16px;
+        }
+    }
+
+    .thread-card,
+    .comment-body-card {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+
+    .thread-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2.2fr) 2px minmax(0, 0.6fr);
+        column-gap: 28px;
+        align-items: flex-start;
+        margin-top: 10px;
+    }
+
+    .thread-main {
+        flex: 1 1 auto;
+    }
+
+    .thread-divider {
+        width: 2px;
+        align-self: stretch;
+        background: linear-gradient(
+            to bottom,
+            transparent,
+            rgba(148, 163, 253, 0.7),
+            transparent
+        );
+        position: relative;
+        left: 5px;
+    }
+
+    .thread-sidebar {
+        flex: 0 0 340px;
+        max-width: 260px;
+        margin-left: auto;
+    }
+
+    .thread-sidebar-card {
+        background: rgba(15,23,42,0.9);
+        border-radius: 16px;
+        border: 1px solid rgba(148,163,253,0.5);
+        box-shadow: 0 0 12px rgba(0,0,0,0.45);
+        padding: 16px 18px;
+        width: 100%;
+    }
+
+    .thread-sidebar-item {
+        display: flex;
+        gap: 10px;
+        text-decoration: none;
+        color: inherit;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(31,41,55,0.8);
+    }
+
+    .thread-sidebar-item:last-child {
+        border-bottom: none;
+    }
+
+    .thread-sidebar-thumb {
+        width: 64px;
+        height: 64px;
+        border-radius: 10px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: radial-gradient(circle at 30% 20%, #1f2937, #020617);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        color: #9ca3af;
+        text-align: center;
+        padding: 4px;
+    }
+
+    .thread-sidebar-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .thread-sidebar-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .thread-sidebar-meta {
+        font-size: 0.75rem;
+        color: rgba(156,163,175,0.9);
+    }
+
+    .thread-share-btn {
+        margin-left: auto;
+        padding: 4px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,253,0.7);
+        background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,64,175,0.9));
+        color: #e5e7eb;
+        font-size: 0.8rem;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .thread-share-btn:hover {
+        filter: brightness(1.08);
+    }
+
+
+    @media (max-width: 992px) {
+        .thread-layout {
+            grid-template-columns: 1fr;
+        }
+        .thread-divider {
+            display: none;
+        }
+        .thread-sidebar {
+            max-width: 100%;
+        }
+    }
+
+</style>
+
+<script src="https://cdn.tiny.cloud/1/nvg3ndzh1qg2hmfddgvv090pum9okoxshvqwlee6vrthjnfo/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+<script>
+  tinymce.init({
+    selector: 'textarea.comment-editor, textarea.thread-editor',
+    plugins: 'link lists image media code emoticons',
+    menubar: false,
+    toolbar: 'undo redo | bold italic | bullist numlist | link image media emoticons | code',
+    automatic_uploads: true,
+    images_upload_url: "{{ url_for('upload_image') }}",
+    images_upload_credentials: true,
+    media_live_embeds: true,
+    extended_valid_elements: 'iframe[src|frameborder|style|scrolling|class|width|height|name|align|allowfullscreen]'
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll("[data-reply-toggle]").forEach(function (link) {
+          link.addEventListener("click", function (e) {
+              e.preventDefault();
+              const commentId = this.getAttribute("data-reply-toggle");
+              const form = document.getElementById("reply-form-" + commentId);
+              if (form) {
+                  form.style.display = form.style.display === "none" ? "block" : "none";
+              }
+          });
+      });
+
+      document.querySelectorAll("[data-edit-toggle]").forEach(function (link) {
+          link.addEventListener("click", function (e) {
+              e.preventDefault();
+              const commentId = this.getAttribute("data-edit-toggle");
+              const form = document.getElementById("edit-form-" + commentId);
+              if (form) {
+                  form.style.display = form.style.display === "none" ? "block" : "none";
+              }
+          });
+      });
+
+      const threadEditForm   = document.getElementById("thread-edit-form");
+      const threadEditBtns   = document.querySelectorAll("[data-thread-edit-toggle]");
+      if (threadEditForm && threadEditBtns.length) {
+          threadEditBtns.forEach(function (btn) {
+              btn.addEventListener("click", function (e) {
+                  e.preventDefault();
+                  const isHidden =
+                      threadEditForm.style.display === "none" ||
+                      threadEditForm.style.display === "";
+                  threadEditForm.style.display = isHidden ? "block" : "none";
+                  if (isHidden) {
+                      threadEditForm.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+              });
+          });
+      }
+
+      const newToggle = document.getElementById("toggle-new-comment");
+      const newForm   = document.getElementById("new-comment-form");
+      if (newToggle && newForm) {
+          newToggle.addEventListener("click", function (e) {
+              e.preventDefault();
+              newForm.style.display =
+                  newForm.style.display === "none" || newForm.style.display === ""
+                  ? "block"
+                  : "none";
+          });
+      }
+
+      if (!("speechSynthesis" in window)) {
+          const info = document.getElementById("tts-support-info");
+          if (info) {
+              info.textContent = "Voorleesfunctie wordt niet ondersteund door deze browser.";
+          }
+      } else {
+          const synth = window.speechSynthesis;
+          let utterance = null;
+
+          const playBtn   = document.getElementById("tts-play");
+          const pauseBtn  = document.getElementById("tts-pause");
+          const stopBtn   = document.getElementById("tts-stop");
+          const rateInput = document.getElementById("tts-rate");
+          const rateValue = document.getElementById("tts-rate-value");
+          const contentEl = document.getElementById("thread-content");
+
+          function getText() {
+              if (!contentEl) return "";
+              return contentEl.innerText || contentEl.textContent || "";
+          }
+
+          function startReading() {
+              const text = getText().trim();
+              if (!text) return;
+
+              if (synth.speaking || synth.paused) {
+                  synth.cancel();
+              }
+
+              utterance = new SpeechSynthesisUtterance(text);
+              utterance.lang = "nl-NL";
+              utterance.rate = parseFloat(rateInput.value) || 1.0;
+
+              synth.speak(utterance);
+          }
+
+          function togglePause() {
+              if (synth.speaking && !synth.paused) {
+                  synth.pause();
+              } else if (synth.paused) {
+                  synth.resume();
+              }
+          }
+
+          function stopReading() {
+              if (synth.speaking || synth.paused) {
+                  synth.cancel();
+              }
+          }
+
+          if (playBtn) {
+              playBtn.addEventListener("click", function (e) {
+                  e.preventDefault();
+                  startReading();
+              });
+          }
+          if (pauseBtn) {
+              pauseBtn.addEventListener("click", function (e) {
+                  e.preventDefault();
+                  togglePause();
+              });
+          }
+          if (stopBtn) {
+              stopBtn.addEventListener("click", function (e) {
+                  e.preventDefault();
+                  stopReading();
+              });
+          }
+
+          if (rateInput && rateValue) {
+              rateInput.addEventListener("input", function () {
+                  rateValue.textContent = rateInput.value;
+              });
+          }
+
+          window.addEventListener("beforeunload", function () {
+              if (synth.speaking || synth.paused) {
+                  synth.cancel();
+              }
+          });
+      }
+
+      document.querySelectorAll("[data-share-url]").forEach(function (btn) {
+          btn.addEventListener("click", function (e) {
+              e.preventDefault();
+              const url = this.dataset.shareUrl;
+              const title = this.dataset.shareTitle || document.title;
+
+              if (navigator.share) {
+                  navigator.share({ title: title, url: url }).catch(function () {});
+              } else {
+                  window.prompt("Kopieer deze link om te delen:", url);
+              }
+          });
+      });
+  });
+</script>
+
+{% endblock %}
+
+{% block main %}
+
+<div class="container mt-4" style="max-width: 1500px; color:#f9fafb;">
+
+    <div class="thread-layout">
+
+        <div class="thread-main">
+
+            <div class="thread-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="blog-thumb">
+                            {% if thread.author.profile_image %}
+                                <img src="{{ url_for('static', filename='profile_pics/' ~ thread.author.profile_image) }}"
+                                     alt="Profielfoto"
+                                     class="blog-thumb-img">
+                            {% else %}
+                                {{ (thread.author.first_name or thread.author.username)[0] | upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h2 class="mb-1">{{ thread.title }}</h2>
+                            <div class="thread-meta">
+                                Gestart door {{ thread.author.full_name or thread.author.username }}
+                                · {{ thread.created_at|nl_datetime }}
+                                · {{ all_comments|length }} reacties
+                            </div>
+                        </div>
+                    </div>
+                    {% if user and (user.id == thread.author_id or user.has_role('admin') or user.has_role('superadmin')) %}
+                        <div class="d-flex gap-2 ms-3">
+                            <button type="button"
+                                    class="btn btn-outline-light btn-sm"
+                                    data-thread-edit-toggle="1">
+                                Dialoog bewerken
+                            </button>
+                            {% if user.has_role('admin') or user.has_role('superadmin') %}
+                                <form method="post"
+                                      action="{{ url_for('delete_thread', thread_id=thread.id) }}"
+                                      onsubmit="return confirm('Weet je zeker dat je deze hele dialoog wilt verwijderen?');">
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm">
+                                        Dialoog verwijderen
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="tts-controls">
+                    <span id="tts-support-info">Dialoog laten voorlezen:</span>
+                    <button id="tts-play"  type="button">▶ Afspelen</button>
+                    <button id="tts-pause" type="button">⏯ Pauze / Hervat</button>
+                    <button id="tts-stop"  type="button">⏹ Stop</button>
+
+                    <div class="tts-speed-wrapper">
+                        <label for="tts-rate" class="mb-0">Snelheid</label>
+                        <input type="range" id="tts-rate" min="0.5" max="2" step="0.1" value="1.5">
+                        <span id="tts-rate-value">1.5</span>x
+                    </div>
+                </div>
+
+
+                {% if thread.body %}
+                    <hr style="border-color: rgba(55,65,81,0.7);">
+                    <div id="thread-content" class="mt-3" style="font-size:0.95rem; line-height:1.6;">
+                        {{ thread.body | safe }}
+                    </div>
+                {% endif %}
+
+
+                {% if user and (user.id == thread.author_id or user.has_role('admin') or user.has_role('superadmin')) %}
+                    <div class="d-flex align-items-center justify-content-between mt-3">
+                        <div class="d-flex gap-3">
+                            <button type="button"
+                                    class="btn btn-outline-light btn-sm"
+                                    data-thread-edit-toggle="1">
+                                Dialoog bewerken
+                            </button>
+
+                            {% if user.has_role('admin') or user.has_role('superadmin') %}
+                                <form method="post"
+                                      action="{{ url_for('delete_thread', thread_id=thread.id) }}"
+                                      onsubmit="return confirm('Weet je zeker dat je deze hele dialoog wilt verwijderen?');">
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm">
+                                        Dialoog verwijderen
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+
+                        <button type="button"
+                                class="thread-share-btn"
+                                data-share-url="{{ url_for('view_thread', thread_id=thread.id, _external=True) }}"
+                                data-share-title="{{ thread.title }}">
+                            Delen
+                        </button>
+                    </div>
+                {% endif %}
+
+
+                {% if user and (user.id == thread.author_id or user.has_role('admin') or user.has_role('superadmin')) %}
+                    <div id="thread-edit-form" class="mt-3" style="display:none;">
+                        <form method="post"
+                              action="{{ url_for('edit_thread', thread_id=thread.id) }}"
+                              enctype="multipart/form-data">
+
+                            <div class="mb-2">
+                                <label for="thread-title" class="form-label">Titel</label>
+                                <input type="text"
+                                       id="thread-title"
+                                       name="title"
+                                       class="form-control"
+                                       placeholder="Titel van de dialoog (max 255 tekens)"
+                                       value="{{ thread.title }}"
+                                       required
+                                       maxlength="255">
+                            </div>
+
+                            <div class="mb-2">
+                                <label for="thread-thumbnail" class="form-label">
+                                    Thumbnail (afbeelding, gif of video)
+                                </label>
+                                <input type="file"
+                                       id="thread-thumbnail"
+                                       name="thumbnail"
+                                       class="form-control"
+                                       accept="image/*,video/*">
+                                <small class="form-text text-muted">
+                                    Laat leeg om de huidige thumbnail te behouden.
+                                </small>
+                            </div>
+
+                            <div class="mb-2">
+                                <label for="thread-body-editor" class="form-label">Startpost / toelichting</label>
+                                <textarea id="thread-body-editor"
+                                          name="body"
+                                          class="form-control thread-editor"
+                                          rows="4">{{ thread.body | safe }}</textarea>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    Wijzigingen opslaan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+
+            </div>
+
+            <div class="new-comment-card" id="comments">
+                {% if user %}
+
+                    {% if request.args.get('comment') == 'posted' %}
+                        <div class="alert alert-success py-1 px-2 mb-2"
+                             style="font-size:0.85rem; border-radius:10px;">
+                            Reactie geplaatst.
+                        </div>
+                    {% endif %}
+
+                    <h6 class="mb-2">
+                        <a href="#" id="toggle-new-comment" style="text-decoration:none;">
+                            Nieuwe reactie
+                        </a>
+                    </h6>
+                    <div id="new-comment-form" style="display:none;">
+                        <form method="post" onsubmit="tinymce.triggerSave();">
+                            <input type="hidden" name="parent_id" value="">
+                            <div class="mb-2">
+                                <textarea name="body"
+                                          class="form-control comment-editor"
+                                          rows="3"
+                                          placeholder="Schrijf hier je reactie..."></textarea>
+                            </div>
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    Plaats reactie
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                {% else %}
+                    <p class="mb-1">
+                        Log in om te reageren op deze dialoog.
+                    </p>
+                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm">
+                        Inloggen
+                    </a>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-sm ms-1">
+                        Registreren
+                    </a>
+                {% endif %}
+            </div>
+
+            <div id="comments" class="comment-tree mt-3">
+                {% macro render_comment(c) %}
+                    <div class="comment-box" id="comment-{{ c.id }}">
+                        <div class="comment-vote">
+                            {% if user %}
+                                <form method="post" action="{{ url_for('vote_comment', comment_id=c.id) }}">
+                                    <input type="hidden" name="direction" value="up">
+                                    <button type="submit">▲</button>
+                                </form>
+                            {% else %}
+                                <span style="font-size:0.7rem;">▲</span>
+                            {% endif %}
+                            <div class="comment-score">{{ c.score }}</div>
+                            {% if user %}
+                                <form method="post" action="{{ url_for('vote_comment', comment_id=c.id) }}">
+                                    <input type="hidden" name="direction" value="down">
+                                    <button type="submit">▼</button>
+                                </form>
+                            {% else %}
+                                <span style="font-size:0.7rem;">▼</span>
+                            {% endif %}
+                        </div>
+                        <div class="comment-body-card">
+                            <div class="comment-meta">
+                                {{ c.author.full_name or c.author.username }}
+                                · {{ c.created_at|nl_datetime }}
+                            </div>
+                            <div>
+                                {{ c.body | safe }}
+                            </div>
+                            <div class="comment-actions">
+                                {% if user %}
+                                    <a href="#"
+                                       data-reply-toggle="{{ c.id }}">
+                                        Reageren
+                                    </a>
+
+                                    {% if user.id == c.author_id or user.has_role('admin') or user.has_role('superadmin') %}
+                                        <a href="#"
+                                           data-edit-toggle="{{ c.id }}">
+                                            Bewerken
+                                        </a>
+                                        <form method="post"
+                                              action="{{ url_for('delete_comment', comment_id=c.id) }}"
+                                              style="display:inline;">
+                                            <button type="submit"
+                                                    class="btn-link-like"
+                                                    onclick="return confirm('Weet je zeker dat je deze reactie wilt verwijderen?');">
+                                                Verwijderen
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color:rgba(156,163,175,0.8);">
+                                        Log in om te reageren
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            {% if user and (user.id == c.author_id or user.has_role('admin') or user.has_role('superadmin')) %}
+                                <div id="edit-form-{{ c.id }}"
+                                     class="reply-form"
+                                     style="display:none;">
+                                    <form method="post"
+                                          action="{{ url_for('edit_comment', comment_id=c.id) }}"
+                                          onsubmit="tinymce.triggerSave();">
+                                        <div class="mb-1">
+                                            <textarea name="body"
+                                                      class="form-control comment-editor"
+                                                      rows="3">{{ c.body }}</textarea>
+                                        </div>
+                                        <div class="text-end">
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                Opslaan
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                            {% endif %}
+
+                            {% if user %}
+                                <div id="reply-form-{{ c.id }}"
+                                     class="reply-form"
+                                     style="display:none;">
+                                    <form method="post" onsubmit="tinymce.triggerSave();">
+                                        <input type="hidden" name="parent_id" value="{{ c.id }}">
+                                        <div class="mb-1">
+                                            <textarea name="body"
+                                                      class="form-control comment-editor"
+                                                      rows="2"
+                                                      placeholder="Antwoord op {{ c.author.full_name or c.author.username }}..."></textarea>
+                                        </div>
+                                        <div class="text-end">
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                Plaats antwoord
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                            {% endif %}
+
+                            {% if c.children %}
+                                <div class="comment-children">
+                                    {% for child in c.children|sort(attribute='created_at')|sort(attribute='score', reverse=True) %}
+                                        {{ render_comment(child) }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endmacro %}
+
+                {% if root_comments %}
+                    {% for comment in root_comments %}
+                        {{ render_comment(comment) }}
+                    {% endfor %}
+                {% else %}
+                    <p style="font-size:0.9rem; color:rgba(156,163,175,0.9);">
+                        Nog geen reacties. Start de discussie met de eerste reactie.
+                    </p>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <div class="thread-divider"></div>
+
+        <div class="thread-sidebar">
+            <div class="thread-sidebar-card">
+                <h5 class="mb-3">Wellicht ook interessant</h5>
+
+                {% if sidebar_threads %}
+                    {% for t in sidebar_threads %}
+                        <a href="{{ url_for('view_thread', thread_id=t.id) }}"
+                           class="thread-sidebar-item">
+                            <div class="thread-sidebar-thumb">
+                                {% if t.thumbnail_image %}
+                                    <img src="{{ url_for('static', filename='dialogue_thumbs/' ~ t.thumbnail_image) }}"
+                                         alt="Thumbnail">
+                                {% else %}
+                                    Geen<br>media
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="thread-sidebar-title">
+                                    {{ t.title }}
+                                </div>
+                                <div class="thread-sidebar-meta">
+                                    {{ t.author.full_name or t.author.username }}
+                                    · {{ t.created_at|nl_datetime }}
+                                    {% set cnt = t.comments.count() %}
+                                    · {{ cnt }} reactie{% if cnt != 1 %}s{% endif %}
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    <p style="font-size:0.85rem; color:rgba(156,163,175,0.9);">
+                        Geen andere dialogen gevonden.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

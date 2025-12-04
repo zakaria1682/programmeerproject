@@ -1,0 +1,26 @@
+lijst met features:
+
+- Blog voor speciale gebruikers.
+- Peiling pagina waarbij na elke peiling een opinie dialoog gestart wordt. Populairste peilingen bovenaan.
+  - iedereen (geregistreerd) mag een peiling aanmaken
+  - iedereen (geregistreerd) mag reageren (eens/oneens)
+  - uitslag zichtbaar na het stemmen
+  Filter voor bepaalde niet toegestane woorden.
+- Dialoog pagina waar een dialoog gestart kan worden. 
+- dialoog pagina (comments kunnen worden gepost, door alle geregistreerde gebruikers)
+- registreer mogelijkheid
+- website deels bruikbaar, registreren voor interactie
+- blogs voor speciale gebruikers (admins)
+    
+  bijdragen kunnen worden geupvote of gedownvote dus populairste bijdragen komen bovenaan. Filter voor bepaalde niet toegestane woorden.
+
+notificaties op website voor gesloten peilingen
+mails na veilingssluiting
+Filter voor bepaalde niet toegestane woorden
+ - LLm of dienst
+
+lijst met externe componenten:
+- Flask
+- Sqlalchemy
+- Bootstrap (mischien)
+

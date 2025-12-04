@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+<form action="{{ url_for('register') }}" method="post">
+    <div class="mb-3">
+        <input autocomplete="off" autofocus
+               class="form-control mx-auto w-auto"
+               id="first_name" name="first_name"
+               placeholder="Voornaam" type="text">
+    </div>
+
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto"
+               id="last_name" name="last_name"
+               placeholder="Achternaam" type="text">
+    </div>
+
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto"
+               id="email" name="email"
+               placeholder="E-mail adres" type="email">
+    </div>
+
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto"
+               id="password" name="password"
+               placeholder="Wachtwoord" type="password">
+    </div>
+
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto"
+               id="confirmation" name="confirmation"
+               placeholder="Bevestig wachtwoord" type="password">
+    </div>
+
+    <div class="text-center mt-3">
+        <button class="btn btn-primary px-4" type="submit">Register</button>
+    </div>
+</form>
+{% endblock %}

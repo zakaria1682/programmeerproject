@@ -1,0 +1,93 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Blog bewerken
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.tiny.cloud/1/nvg3ndzh1qg2hmfddgvv090pum9okoxshvqwlee6vrthjnfo/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+<script>
+  tinymce.init({
+    selector: '#content',
+    plugins: 'link lists image media code',
+    toolbar: 'undo redo | blocks | bold italic | ' +
+             'alignleft aligncenter alignright | bullist numlist | ' +
+             'link image media | code',
+    automatic_uploads: true,
+    images_upload_url: "{{ url_for('upload_image') }}",
+    images_upload_credentials: true,
+
+    media_live_embeds: true,
+    extended_valid_elements: 'iframe[src|frameborder|style|scrolling|class|width|height|name|align|allowfullscreen]'
+  });
+</script>
+{% endblock %}
+
+{% block main %}
+
+<div class="container mt-4" style="max-width: 900px; color: #f9fafb;">
+
+    <h1 class="mb-3">Blog bewerken</h1>
+
+    <div class="mt-2 p-3 rounded"
+         style="background: rgba(15,23,42,0.96);
+                border: 1px solid rgba(148,163,253,0.6);
+                box-shadow: 0 22px 60px rgba(15,23,42,0.9);">
+
+        <form method="post" enctype="multipart/form-data">
+
+            <div class="mb-3">
+                <label for="title" class="form-label">Titel</label>
+                <input type="text"
+                       class="form-control"
+                       id="title"
+                       name="title"
+                       value="{{ post.title }}"
+                       required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Huidige thumbnail</label><br>
+                {% if post.thumbnail_image %}
+                    <img src="{{ url_for('static', filename='blog_thumbs/' ~ post.thumbnail_image) }}"
+                         alt="Thumbnail"
+                         style="max-width: 240px; border-radius: 12px; margin-bottom: 8px;">
+                {% else %}
+                    <p class="text-muted mb-1" style="font-size:0.9rem;">Geen thumbnail ingesteld.</p>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="thumbnail_image" class="form-label">Nieuwe thumbnail afbeelding (optioneel)</label>
+                <input type="file"
+                       class="form-control"
+                       id="thumbnail_image"
+                       name="thumbnail_image"
+                       accept="image/*">
+                <small class="form-text text-muted">
+                    Laat dit veld leeg om de huidige thumbnail te behouden.
+                </small>
+            </div>
+
+            <div class="mb-3">
+                <label for="content" class="form-label">Inhoud</label>
+                <textarea id="content"
+                          name="content">{{ post.content | safe }}</textarea>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <a href="{{ url_for('view_blog', post_id=post.id) }}" class="btn btn-outline-light">
+                    Annuleren
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    Wijzigingen opslaan
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+{% endblock %}

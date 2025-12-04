@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="icon" sizes="192x192" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
+
+
+    <link crossorigin="anonymous"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+    <script crossorigin="anonymous"
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <title>Accountantzijn.nl {% block title %}{% endblock %}</title>
+
+    <style>
+    :root {
+        --az-bg-deep: #050315;
+        --az-bg-panel: rgba(15, 23, 42, 0.94);
+        --az-accent-purple: #a855f7;
+        --az-accent-pink: #ec4899;
+        --az-accent-blue: #38bdf8;
+        --az-text-main: #f9fafb;
+        --az-text-muted: #e5e7eb;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--az-text-main);
+
+        background:
+            radial-gradient(circle at 0% 0%, rgba(168, 85, 247, 0.45), transparent 55%),
+            radial-gradient(circle at 100% 100%, rgba(56, 189, 248, 0.35), transparent 55%),
+            linear-gradient(135deg, #020617, #0b1024 40%, #020617 100%);
+        background-attachment: scroll;
+        background-size: cover;
+    }
+
+    .page-frame {
+        max-width: 1400px;
+        margin: 20px auto 40px auto;
+        padding: 24px 40px 40px;
+        border-radius: 32px;
+        background: var(--az-bg-panel);
+        border: 1px solid rgba(129, 140, 248, 0.35);
+        box-shadow:
+            0 24px 80px rgba(0, 0, 0, 0.7),
+            0 0 40px rgba(56, 189, 248, 0.12);
+    }
+
+    .top-nav {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 10px;
+    }
+
+    .top-nav-left {
+        display: flex;
+        gap: 18px;
+        flex-grow: 1;
+    }
+
+    .nav-tab {
+        min-width: 110px;
+        text-align: center;
+        padding: 12px 28px;
+        border-radius: 999px;
+        font-size: 1.05rem;
+        text-decoration: none;
+        color: var(--az-text-muted);
+
+        background:
+            radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.12), transparent 55%),
+            linear-gradient(135deg, rgba(148, 163, 253, 0.35), rgba(15, 23, 42, 0.95));
+        border: 1px solid rgba(148, 163, 253, 0.45);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.7);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .nav-tab:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.85);
+        background:
+            radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.16), transparent 55%),
+            linear-gradient(135deg, rgba(165, 180, 252, 0.55), rgba(15, 23, 42, 0.98));
+    }
+
+    .nav-tab.active {
+        color: #ffffff;
+        background: linear-gradient(135deg, var(--az-accent-purple), var(--az-accent-blue));
+        box-shadow:
+            0 0 0 1px rgba(248, 250, 252, 0.25),
+            0 18px 45px rgba(129, 140, 248, 0.6);
+    }
+
+    .top-nav-divider {
+        width: 2px;
+        height: 56px;
+        background: linear-gradient(to bottom, transparent, rgba(148, 163, 253, 0.7), transparent);
+    }
+
+    .top-nav-right {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .top-nav-user {
+        margin-top: -20px;
+        font-size: 0.8rem;
+        color: var(--az-text-muted);
+        text-align: right;
+        line-height: 1.2;
+        margin-right: 8px;
+    }
+
+    .top-nav-user strong {
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    .nav-secondary {
+        min-width: 130px;
+        text-align: center;
+        padding: 12px 24px;
+        border-radius: 999px;
+        text-decoration: none;
+        font-size: 0.75rem;
+        color: var(--az-text-muted);
+        background:
+            radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.10), transparent 55%),
+            linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 64, 175, 0.85));
+        border: 1px solid rgba(148, 163, 253, 0.5);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.8);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .nav-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+    }
+
+    .nav-secondary.primary {
+        color: #f9fafb;
+        background: linear-gradient(135deg, #fb923c, #ec4899);
+        border-color: rgba(251, 146, 60, 0.7);
+        box-shadow:
+            0 0 0 1px rgba(248, 250, 252, 0.35),
+            0 16px 42px rgba(248, 113, 113, 0.55);
+    }
+
+    .nav-underline {
+        margin-top: 10px;
+        height: 2px;
+        background: linear-gradient(to right, transparent, rgba(148, 163, 253, 0.7), transparent);
+    }
+
+    main.content-area {
+        margin-top: 26px;
+    }
+
+    footer {
+        margin-top: 60px;
+        text-align: center;
+        font-size: 0.85rem;
+        color: rgba(209, 213, 219, 0.8);
+    }
+
+    .content-area h1 {
+        font-size: 2.4rem;
+        margin-bottom: 1rem;
+        color: var(--az-text-main);
+    }
+
+    .content-area p {
+        color: var(--az-text-muted);
+        font-size: 1rem;
+        line-height: 1.7;
+    }
+
+    .photo-quote {
+        margin-top: 12px;
+        font-size: 0.95rem;
+        color: #ffffff;
+        max-width: 360px;
+        text-align: right;
+        font-style: italic;
+        line-height: 1.5;
+    }
+
+    .nav-logo {
+        height: 150px;
+        margin-left: 16px;
+        opacity: 0.92;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.45));
+        transition: 0.2s ease;
+    }
+
+    .nav-logo:hover {
+        opacity: 1;
+        transform: scale(1.06);
+    }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+<div class="page-frame">
+
+    <header class="top-nav">
+
+        <img src="{{ url_for('static', filename='images/logo.png') }}"
+             alt="Logo"
+             class="nav-logo">
+
+        <div class="top-nav-left">
+            <a href="{{ url_for('home') }}"
+               class="nav-tab {% if request.endpoint in ['home'] %}active{% endif %}">
+                Home
+            </a>
+
+            <a href="{{ url_for('blog') }}"
+               class="nav-tab {% if request.endpoint in ['blog', 'view_blog', 'new_blog', 'edit_blog'] %}active{% endif %}">
+                Blog
+            </a>
+
+            <a href="{{ url_for('opinie') }}"
+               class="nav-tab {% if request.endpoint == 'opinie' %}active{% endif %}">
+                Opinie
+            </a>
+
+            <a href="{{ url_for('dialoog') }}"
+               class="nav-tab {% if request.endpoint in ['dialoog', 'view_thread', 'new_dialoog'] %}active{% endif %}">
+                Dialoog
+            </a>
+
+            <a href="{{ url_for('contact') }}"
+               class="nav-tab {% if request.endpoint == 'contact' %}active{% endif %}">
+                Contact
+            </a>
+
+            {% if user and (user.has_role('admin') or user.has_role('superadmin')) %}
+                <a href="{{ url_for('admin') }}"
+                   class="nav-tab {% if request.endpoint in ['admin', 'admin_detail'] %}active{% endif %}">
+                    Admin
+                </a>
+            {% endif %}
+
+        </div>
+
+        <div class="top-nav-divider"></div>
+
+        <div class="top-nav-right">
+
+            {% if user %}
+                <div class="d-flex flex-column align-items-center me-2">
+                    <div class="top-nav-user mb-1">
+                        Ingelogd als <strong>{{ user.username }}</strong>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('index') }}" class="nav-secondary">
+                            Mijn gegevens
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="nav-secondary primary">
+                            Uitloggen
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('register') }}" class="nav-secondary primary">
+                        Registreren
+                    </a>
+                    <a href="{{ url_for('login') }}" class="nav-secondary">
+                        Inloggen
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+
+    </header>
+
+    <div class="nav-underline"></div>
+
+    {% if get_flashed_messages() %}
+        <div class="alert alert-primary mb-3 text-center">
+            {{ get_flashed_messages() | join(" ") }}
+        </div>
+    {% endif %}
+
+    <main class="content-area">
+        {% block main %}{% endblock %}
+    </main>
+
+    <footer>
+        © 2025 Accountantzijn.nl
+    </footer>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,200 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Mijn gegevens
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .role-pill {
+        display: inline-block;
+        padding: 0.17rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-right: 0.25rem;
+        margin-bottom: 0.15rem;
+        border: 1px solid rgba(148, 163, 253, 0.6);
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.9), rgba(59, 130, 246, 0.9));
+        color: #f9fafb;
+    }
+
+    .role-pill.role-user {
+        background: linear-gradient(135deg, rgba(55, 65, 81, 0.95), rgba(75, 85, 99, 0.95));
+    }
+
+    .role-pill.role-author {
+        background: linear-gradient(135deg, rgba(244, 114, 182, 0.95), rgba(129, 140, 248, 0.95));
+    }
+
+    .role-pill.role-admin {
+        background: linear-gradient(135deg, rgba(52, 211, 153, 0.95), rgba(16, 185, 129, 0.95));
+    }
+
+    .role-pill.role-superadmin {
+        background: linear-gradient(135deg, #f97316, #ec4899);
+        box-shadow: 0 0 0 1px rgba(248, 250, 252, 0.4);
+    }
+
+    .profile-avatar {
+        width: 96px;
+        height: 96px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 2px solid rgba(148,163,253,0.7);
+    }
+</style>
+{% endblock %}
+
+{% block main %}
+
+<div class="container mt-4" style="max-width: 900px; color: #f9fafb;">
+
+    <h1 class="mb-3">Mijn gegevens</h1>
+
+    {% if user %}
+        <div class="mt-2 p-3 rounded"
+             style="background: rgba(15,23,42,0.9);
+                    border: 1px solid rgba(148,163,253,0.5);
+                    box-shadow: 0 0 12px rgba(0,0,0,0.45);">
+
+            <div class="d-flex mb-3 align-items-center gap-3">
+                <div>
+                    {% if user.profile_image %}
+                        <img src="{{ url_for('static', filename='profile_pics/' ~ user.profile_image) }}"
+                             alt="Profielfoto"
+                             class="profile-avatar">
+                    {% else %}
+                        <div class="profile-avatar d-flex align-items-center justify-content-center"
+                             style="background: rgba(31,41,55,0.9); font-size:1.8rem;">
+                            {{ (user.first_name or user.username)[:1]|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div>
+                    <p class="mb-1"><strong>Naam:</strong> {{ user.full_name }}</p>
+                    <p class="mb-1"><strong>E-mail:</strong> {{ user.email or '–' }}</p>
+                    <p class="mb-0">
+                        <strong>Rollen:</strong>
+                        {% set role_names = user.roles | map(attribute='name') | list %}
+                        {% if role_names %}
+                            {% for r in role_names %}
+                                <span class="role-pill role-{{ r | lower | replace(' ', '') }}">
+                                    {{ r }}
+                                </span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted" style="font-size:0.9rem;">
+                                geen rollen
+                            </span>
+                        {% endif %}
+                    </p>
+                    {% if user.created_at %}
+                        <p class="mt-1 mb-0">
+                            <strong>Lid sinds:</strong> {{ user.created_at.strftime("%d-%m-%Y %H:%M") }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr class="mt-2 mb-3" style="border-color: rgba(55,65,81,0.7);">
+
+            <form method="post" enctype="multipart/form-data">
+
+            <script>
+                function enableEdit() {
+                    const inputs = document.querySelectorAll(".editable-field");
+                    inputs.forEach(i => {
+                        i.removeAttribute("readonly");
+                        i.classList.remove("disabled-input");
+                    });
+
+                    document.getElementById("profile_image").removeAttribute("disabled");
+
+                    document.getElementById("edit-btn").style.display = "none";
+
+                    document.getElementById("save-btn").style.display = "inline-block";
+                }
+            </script>
+
+            <style>
+                .disabled-input {
+                    background-color: #1f2937 !important;   
+                    color: #9ca3af !important;            
+                    cursor: not-allowed;
+                }
+            </style>
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label for="first_name" class="form-label">Voornaam</label>
+                    <input type="text"
+                        class="form-control editable-field disabled-input"
+                        id="first_name"
+                        name="first_name"
+                        value="{{ user.first_name or '' }}"
+                        readonly>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="last_name" class="form-label">Achternaam</label>
+                    <input type="text"
+                        class="form-control editable-field disabled-input"
+                        id="last_name"
+                        name="last_name"
+                        value="{{ user.last_name or '' }}"
+                        readonly>
+                </div>
+
+                <div class="col-md-8">
+                    <label for="email" class="form-label">E-mail adres</label>
+                    <input type="email"
+                        class="form-control editable-field disabled-input"
+                        id="email"
+                        name="email"
+                        value="{{ user.email or '' }}"
+                        readonly>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="profile_image" class="form-label">Profielfoto</label>
+                    <input type="file"
+                        class="form-control"
+                        id="profile_image"
+                        name="profile_image"
+                        accept="image/*"
+                        disabled>
+                </div>
+
+            </div>
+
+            <div class="d-flex justify-content-end mt-3 gap-2">
+
+                <button type="button"
+                        id="edit-btn"
+                        class="btn btn-secondary"
+                        onclick="enableEdit()">
+                    Gegevens wijzigen
+                </button>
+
+                <button type="submit"
+                        id="save-btn"
+                        class="btn btn-primary"
+                        style="display:none;">
+                    Gegevens opslaan
+                </button>
+
+            </div>
+
+        </form>
+
+        </div>
+
+    {% else %}
+        <h3>Je bent niet ingelogd.</h3>
+    {% endif %}
+
+</div>
+
+{% endblock %}
