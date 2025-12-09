@@ -1430,9 +1430,47 @@ def poll_make_dialogue(poll_id):
 
 # CONTACT PAGE
 #--------------------------------------------------------------------------------------------------------------
-@app.route("/contact")
+@app.route("/contact", methods=["GET", "POST"])
 def contact():
-    return render_template("apology.html", top=200, bottom="Contactpagina in de maak")
+    """Contact page with contact details and contact form"""
+
+    name = ""
+    email = ""
+    subject = ""
+    message = ""
+
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        email = (request.form.get("email") or "").strip()
+        subject = (request.form.get("subject") or "").strip()
+        message = (request.form.get("message") or "").strip()
+
+        errors = []
+
+        if not name:
+            errors.append("Naam is verplicht.")
+        if not email:
+            errors.append("E-mailadres is verplicht.")
+        if not subject:
+            errors.append("Onderwerp is verplicht.")
+        if not message:
+            errors.append("Bericht is verplicht.")
+
+        if errors:
+            for e in errors:
+                flash(e, "danger")
+            return render_template(
+                "contact.html",
+                name=name,
+                email=email,
+                subject=subject,
+                message=message,
+            )
+
+        flash("Bedankt voor je bericht. We nemen zo snel mogelijk contact met je op.", "success")
+        return redirect(url_for("contact"))
+
+    return render_template("contact.html")
 
 
 # Create database tables and default roles if they don't exist
