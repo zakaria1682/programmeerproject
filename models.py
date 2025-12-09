@@ -102,7 +102,6 @@ class DialogueComment(db.Model):
     # Links comment to thread
     thread_id = db.Column(db.Integer, db.ForeignKey("dialogue_threads.id"), nullable=False)
 
-    # Author
     author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     author = db.relationship("User", backref="dialogue_comments")
 
@@ -139,3 +138,70 @@ class DialogueThreadVote(db.Model):
     # Link to user and thread
     user = db.relationship("User", backref="thread_votes")
     thread = db.relationship("DialogueThread", backref="votes")
+
+
+class OpinionPoll(db.Model):
+    __tablename__ = "opinion_polls"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    question = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+
+    author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+
+    thumbnail_image = db.Column(db.String(255), nullable=True)
+
+    # Link to dialogue thread
+    dialogue_thread_id = db.Column(db.Integer, db.ForeignKey("dialogue_threads.id"))
+
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    expires_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.utcnow() + timedelta(days=3),
+    )
+
+    yes_count = db.Column(db.Integer, nullable=False, default=0)
+    no_count = db.Column(db.Integer, nullable=False, default=0)
+
+    score = db.Column(db.Integer, nullable=False, default=0)
+
+    author = db.relationship("User", backref="opinion_polls")
+    dialogue_thread = db.relationship(
+        "DialogueThread",
+        backref="opinion_poll",
+        uselist=False,
+    )
+
+    votes = db.relationship(
+        "OpinionVote",
+        backref="poll",
+        cascade="all, delete-orphan",
+    )
+
+    @property
+    def total_votes(self):
+        """Return total number of votes."""
+        return (self.yes_count or 0) + (self.no_count or 0)
+
+    @property
+    def is_expired(self):
+        """Return True if the poll can no longer be voted on."""
+        return datetime.utcnow() > (self.expires_at or self.created_at)
+
+
+class OpinionVote(db.Model):
+    __tablename__ = "opinion_votes"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    poll_id = db.Column(db.Integer, db.ForeignKey("opinion_polls.id"), nullable=False)
+
+    value = db.Column(db.Integer, nullable=False)
+
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    user = db.relationship("User", backref="opinion_votes")

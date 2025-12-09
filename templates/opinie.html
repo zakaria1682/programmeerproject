@@ -1,0 +1,707 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Opiniepeilingen
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.opinion-page-wrapper {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 1.75rem;
+    align-items: flex-start;
+}
+
+@media (max-width: 992px) {
+    .opinion-page-wrapper {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.opinion-cards-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+}
+
+.opinion-card {
+    position: relative;
+    flex: 0 0 300px;
+    max-width: 300px;
+    padding: 1.05rem 1.1rem 1.2rem;
+    border-radius: 1.4rem;
+    background: radial-gradient(circle at top left, #1e293b, #020617);
+    border: 1px solid rgba(148, 163, 253, 0.4);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.85);
+    color: #f9fafb;
+    overflow: hidden;
+}
+
+.opinion-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 0.45rem;
+}
+
+.opinion-author-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.55rem;
+}
+
+.opinion-author-info {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.opinion-author-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 2px solid rgba(148, 163, 253, 0.75);
+}
+
+.opinion-author-text {
+    font-size: 0.78rem;
+}
+
+.poll-status-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(248, 250, 252, 0.7);
+    background: linear-gradient(135deg, #22c55e, #4ade80);
+    color: #0b1120;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.opinion-card.poll-closed .poll-status-badge {
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    color: #0b1120;
+}
+
+.poll-timer-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    border-radius: 999px;
+    padding: 0.18rem 0.7rem;
+    background: radial-gradient(circle at top left, #0f172a, #020617);
+    border: 1px solid rgba(148, 163, 253, 0.65);
+    margin-bottom: 0.65rem;
+}
+
+.poll-timer-label {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.65rem;
+    color: #e5e7eb;
+}
+
+.poll-timer-value {
+    font-weight: 700;
+}
+
+.opinion-description {
+    font-size: 0.8rem;
+    margin-bottom: 0.55rem;
+    max-height: 3.5rem;
+    overflow: hidden;
+}
+
+.poll-vote-area {
+    margin-bottom: 0.65rem;
+}
+
+.poll-vote-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
+}
+
+.poll-vote-button {
+    position: relative;
+    border-radius: 1rem;
+    padding: 0.55rem 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    overflow: hidden;
+    transform-origin: center;
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+    animation: pulseGlow 2.4s infinite;
+}
+
+.poll-vote-button-yes {
+    background: radial-gradient(circle at top left, #3b82f6, #6366f1);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.55);
+}
+
+.poll-vote-button-no {
+    background: radial-gradient(circle at top left, #ef4444, #b91c1c);
+    box-shadow: 0 0 20px rgba(248, 113, 113, 0.55);
+}
+
+.poll-vote-button.voted {
+    box-shadow: 0 0 26px rgba(250, 250, 250, 0.85);
+    outline: 2px solid rgba(248, 250, 252, 0.85);
+    outline-offset: 2px;
+}
+
+.poll-vote-button:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 0 24px rgba(129, 140, 248, 0.6);
+}
+
+.poll-vote-button:active {
+    transform: scale(0.97);
+}
+
+@keyframes pulseGlow {
+    0%   { box-shadow: 0 0 16px rgba(129,140,248,0.4); }
+    50%  { box-shadow: 0 0 28px rgba(129,140,248,0.8); }
+    100% { box-shadow: 0 0 16px rgba(129,140,248,0.4); }
+}
+
+.poll-results-area {
+    margin-bottom: 0.7rem;
+}
+
+.poll-results-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.7rem;
+    height: 110px;
+    padding: 0.45rem 0.55rem;
+    border-radius: 1.2rem;
+    background: radial-gradient(circle at top left, #020617, #020617);
+    border: 1px solid rgba(30, 64, 175, 0.6);
+}
+
+.poll-bar {
+    position: relative;
+    flex: 1;
+    border-radius: 0.9rem;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.9);
+    height: 100%;
+}
+
+.poll-bar::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 0;
+    border-radius: inherit;
+    background: linear-gradient(to top,  #3b82f6, #6366f1);
+    transition: height 0.85s ease-out;
+}
+
+.poll-bar-no::after {
+    background: linear-gradient(to top,  #ef4444, #b91c1c);
+}
+
+.poll-results-area.show-results .poll-bar::after {
+    height: var(--fill, 0%);
+}
+
+.poll-results-text {
+    font-size: 0.75rem;
+    margin-top: 0.45rem;
+}
+
+.poll-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+}
+
+.btn-outline-small {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    border-width: 1px;
+}
+
+.btn-make-dialogue {
+    margin-top: 0.55rem;
+    border-radius: 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.opinion-side-panel {
+    position: relative;
+    max-width: 265px;
+    border-radius: 1.3rem;
+    padding: 1.2rem 1.3rem;
+    background: radial-gradient(circle at top left, #020617, #020617);
+    border: 1px solid rgba(148, 163, 253, 0.5);
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.9);
+    color: #e5e7eb;
+    justify-self: end;
+}
+
+.opinion-side-panel::before {
+    content: "";
+    position: absolute;
+    left: -1.75rem;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 2px;
+    border-radius: 999px;
+    background: linear-gradient(
+        to bottom,
+        rgba(99, 102, 241, 0),
+        rgba(129, 140, 248, 0.9),
+        rgba(236, 72, 153, 0)
+    );
+    box-shadow: 0 0 18px rgba(129, 140, 248, 0.8);
+}
+
+.opinion-side-panel h5 {
+    font-weight: 600;
+}
+
+.opinion-side-panel ul {
+    padding-left: 1.1rem;
+    font-size: 0.8rem;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.btn-poll-main {
+    background: linear-gradient(135deg,#f97316,#ec4899,#6366f1);
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 0.9rem;
+    border: none;
+    box-shadow: 0 0 18px rgba(236,72,153,0.45);
+    transition: 0.2s ease;
+}
+
+.btn-poll-main:hover{
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 0 26px rgba(236,72,153,0.75);
+}
+</style>
+{% endblock %}
+
+{% block main %}
+
+<div class="container mt-4" style="color:#f9fafb; max-width: 1650px;">
+
+    <h1 class="mb-3">Opiniepeilingen</h1>
+
+    <div class="opinion-page-wrapper">
+
+        <div>
+            <div class="opinion-cards-grid">
+
+                {% if polls %}
+                    {% for poll in polls %}
+                        {% set expired = poll.expires_at and poll.expires_at <= now_utc %}
+                        {% set total_votes = (poll.yes_count or 0) + (poll.no_count or 0) %}
+                        {% set yes_pct = (poll.yes_count * 100 // total_votes) if total_votes > 0 else 0 %}
+                        {% set no_pct = (poll.no_count * 100 // total_votes) if total_votes > 0 else 0 %}
+                        {% set remaining_seconds = ((poll.expires_at - now_utc).total_seconds() if poll.expires_at and poll.expires_at > now_utc else 0) | int %}
+                        {% set user_choice = user_votes.get(poll.id) %}
+
+                        <div class="opinion-card{% if expired %} poll-closed{% endif %}"
+                             data-poll-id="{{ poll.id }}"
+                             data-remaining="{{ remaining_seconds }}">
+
+                            <div class="opinion-title">
+                                {{ poll.question }}
+                            </div>
+
+                            <div class="opinion-author-row">
+                                <div class="opinion-author-info">
+                                    {% if poll.author and poll.author.profile_image %}
+                                        <img src="{{ url_for('static', filename='profile_pics/' ~ poll.author.profile_image) }}"
+                                             alt="Profielfoto"
+                                             class="opinion-author-avatar">
+                                    {% else %}
+                                        <div class="opinion-author-avatar d-flex align-items-center justify-content-center"
+                                             style="background:#020617; font-size:0.9rem;">
+                                            {{ (poll.author.first_name or poll.author.username)[:1]|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="opinion-author-text">
+                                        <div style="font-weight:600;">
+                                            Door {{ poll.author.full_name if poll.author else 'Onbekend' }}
+                                        </div>
+                                        {% if poll.created_at %}
+                                            <div class="text-muted">
+                                                {{ poll.created_at|nl_datetime("%d-%m-%Y %H:%M") }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="poll-status-badge">
+                                    {% if expired %}
+                                        GESLOTEN
+                                    {% else %}
+                                        ACTIEF
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="poll-timer-pill">
+                                {% if expired %}
+                                    <span class="poll-timer-label">Afgerond</span>
+                                    <span class="poll-timer-value">00:00:00</span>
+                                {% else %}
+                                    <span class="poll-timer-label">Resterende tijd</span>
+                                    <span class="poll-timer-value">
+                                        --
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="opinion-description">
+                                {{ poll.description }}
+                            </div>
+
+                            <div class="poll-vote-area {% if expired %}d-none{% endif %}">
+                                <div class="poll-vote-buttons">
+                                    <form method="post"
+                                          action="{{ url_for('vote_opinie', poll_id=poll.id) }}">
+                                        <input type="hidden" name="choice" value="yes">
+                                        <button type="submit"
+                                                class="poll-vote-button poll-vote-button-yes w-100 {% if user_choice == 'yes' %}voted{% endif %}">
+                                            Eens
+                                        </button>
+                                    </form>
+                                    <form method="post"
+                                          action="{{ url_for('vote_opinie', poll_id=poll.id) }}">
+                                        <input type="hidden" name="choice" value="no">
+                                        <button type="submit"
+                                                class="poll-vote-button poll-vote-button-no w-100 {% if user_choice == 'no' %}voted{% endif %}">
+                                            Oneens
+                                        </button>
+                                    </form>
+                                </div>
+                                <div class="mt-2 text-xs text-muted">
+                                    Uitslag wordt zichtbaar zodra deze peiling is afgelopen.
+                                </div>
+                                {% if user_choice %}
+                                    <div class="mt-1 text-xs">
+                                        Jij hebt gestemd:
+                                        <strong>
+                                            {{ 'Eens' if user_choice == 'yes' else 'Oneens' }}
+                                        </strong>.
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="poll-results-area {% if expired %}show-results{% else %}d-none{% endif %}">
+                                <div class="poll-results-bars">
+                                    <div class="poll-bar poll-bar-yes"
+                                         style="--fill: {{ yes_pct }}%;"></div>
+                                    <div class="poll-bar poll-bar-no"
+                                         style="--fill: {{ no_pct }}%;"></div>
+                                </div>
+                                <div class="poll-results-text d-flex justify-content-between">
+                                    <span>Eens: {{ poll.yes_count or 0 }} ({{ yes_pct }}%)</span>
+                                    <span>Oneens: {{ poll.no_count or 0 }} ({{ no_pct }}%)</span>
+                                </div>
+                                <div class="poll-results-text text-muted">
+                                    Totaal {{ total_votes }} stemmen
+                                    {% if poll.expires_at %}
+                                        · gesloten op {{ poll.expires_at|nl_datetime("%d-%m-%Y %H:%M") }}
+                                    {% endif %}
+                                </div>
+                                {% if user_choice %}
+                                    <div class="poll-results-text text-muted">
+                                        Jij hebt gestemd:
+                                        <strong>
+                                            {{ 'Eens' if user_choice == 'yes' else 'Oneens' }}
+                                        </strong>.
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="poll-footer-row">
+
+                                {% set can_manage_time = user and (user.has_role('admin') or user.has_role('superadmin')) %}
+
+                                {% if can_manage_time %}
+                                    <button type="button"
+                                            class="btn btn-outline-light btn-outline-small"
+                                            onclick="toggleTimeForm({{ poll.id }})">
+                                        Peilingtijd aanpassen
+                                    </button>
+                                {% else %}
+                                    <span></span>
+                                {% endif %}
+
+                                {% if user and (user.id == poll.author_id
+                                                or user.has_role('admin')
+                                                or user.has_role('superadmin')) %}
+                                    <form method="post"
+                                          action="{{ url_for('delete_opinie', poll_id=poll.id) }}"
+                                          onsubmit="return confirm('Weet je zeker dat je deze peiling wilt verwijderen?');">
+                                        <button type="submit"
+                                                class="btn btn-outline-danger btn-outline-small">
+                                            Verwijderen
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+
+                            {% if can_manage_time %}
+                                <form method="post"
+                                      action="{{ url_for('update_poll_time', poll_id=poll.id) }}"
+                                      id="time-form-{{ poll.id }}"
+                                      class="mt-2 d-none">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="number"
+                                               name="duration_value"
+                                               min="1"
+                                               step="1"
+                                               class="form-control form-control-sm"
+                                               placeholder="Duur"
+                                               required>
+                                        <select name="duration_unit"
+                                                class="form-select form-select-sm">
+                                            <option value="seconds">seconden</option>
+                                            <option value="minutes">minuten</option>
+                                            <option value="hours">uren</option>
+                                            <option value="days">dagen</option>
+                                        </select>
+                                        <button type="submit"
+                                                class="btn btn-primary btn-sm">
+                                            Opslaan
+                                        </button>
+                                    </div>
+                                    <div class="text-xs text-muted mt-1">
+                                        Tussen 10 seconden en 30 dagen.
+                                    </div>
+                                </form>
+                            {% endif %}
+
+                            {% if expired %}
+                                <form method="post"
+                                      action="{{ url_for('poll_make_dialogue', poll_id=poll.id) }}">
+                                    <button type="submit"
+                                            class="btn btn-primary w-100 btn-make-dialogue">
+                                        {% if poll.dialogue_thread_id %}
+                                            Naar dialoog
+                                        {% else %}
+                                            Maak dialoog aan
+                                        {% endif %}
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form method="post"
+                                      action="{{ url_for('poll_make_dialogue', poll_id=poll.id) }}"
+                                      class="d-none">
+                                    <button type="submit"
+                                            class="btn btn-primary w-100 btn-make-dialogue">
+                                        {% if poll.dialogue_thread_id %}
+                                            Naar dialoog
+                                        {% else %}
+                                            Maak dialoog aan
+                                        {% endif %}
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">Er zijn nog geen opiniepeilingen.</p>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <aside class="opinion-side-panel">
+            <h5 class="mb-2">Over de opiniepeilingen</h5>
+            <ul class="mb-3">
+                <li>Elke geregistreerde gebruiker kan een peiling starten.</li>
+                <li>Stem met <strong>eens</strong> of <strong>oneens</strong>.</li>
+                <li>De uitslag wordt zichtbaar zodra de peiling is afgelopen.</li>
+                <li>Na afloop blijft de uitslag zichtbaar, maar stemmen kan dan niet meer.</li>
+                <li>Bij elke peiling kan automatisch een dialoog worden gestart.</li>
+            </ul>
+
+            {% if user %}
+                <button class="btn btn-poll-main w-100 mt-2"
+                        data-bs-toggle="modal"
+                        data-bs-target="#newPollModal"
+                        style="border-radius: 0.9rem;">
+                    Maak peiling aan
+                </button>
+
+            {% else %}
+                <button class="btn btn-poll-main w-100 mt-2" disabled>
+                    Log in om een peiling aan te maken
+                </button>
+            {% endif %}
+        </aside>
+
+    </div>
+</div>
+
+<div class="modal fade" id="newPollModal" tabindex="-1" aria-labelledby="newPollModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="background:#020617; color:#f9fafb;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="newPollModalLabel">Nieuwe peiling starten</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <form method="post"
+                  action="{{ url_for('new_opinie') }}"
+                  enctype="multipart/form-data">
+                <div class="modal-body">
+
+                    <div class="mb-3">
+                        <label for="question" class="form-label">Vraag</label>
+                        <input type="text"
+                               class="form-control"
+                               id="question"
+                               name="question"
+                               maxlength="80"
+                               required>
+                        <div class="form-text text-muted">
+                            Maximaal 80 tekens.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Toelichting</label>
+                        <textarea class="form-control"
+                                  id="description"
+                                  name="description"
+                                  rows="3"
+                                  maxlength="220"
+                                  required></textarea>
+                        <div class="form-text text-muted">
+                            Maximaal 220 tekens.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="thumbnail" class="form-label">Thumbnail (afbeelding)</label>
+                        <input type="file"
+                               class="form-control"
+                               id="thumbnail"
+                               name="thumbnail"
+                               accept="image/*"
+                               required>
+                        <div class="form-text text-muted">
+                            Deze thumbnail wordt gebruikt bij de dialoog.
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-muted">
+                        De standaard looptijd van een peiling is 3 dagen.
+                    </div>
+
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Annuleren
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Peiling starten
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleTimeForm(pollId) {
+    const form = document.getElementById("time-form-" + pollId);
+    if (!form) return;
+    form.classList.toggle("d-none");
+}
+
+function formatDuration(totalSeconds) {
+    totalSeconds = Math.max(0, totalSeconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const hh = String(hours).padStart(2, "0");
+    const mm = String(minutes).padStart(2, "0");
+    const ss = String(seconds).padStart(2, "0");
+    return hh + ":" + mm + ":" + ss;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const cards = document.querySelectorAll(".opinion-card");
+
+    cards.forEach(function (card) {
+        let secondsLeft = parseInt(card.dataset.remaining || "0", 10);
+        const timerValueEl = card.querySelector(".poll-timer-value");
+        const statusBadge = card.querySelector(".poll-status-badge");
+        const voteArea = card.querySelector(".poll-vote-area");
+        const resultsArea = card.querySelector(".poll-results-area");
+        const makeDialogueForm = card.querySelector("form[action$='make-dialogue']");
+
+        function setClosedState() {
+            card.classList.add("poll-closed");
+            if (statusBadge) {
+                statusBadge.textContent = "GESLOTEN";
+            }
+            if (timerValueEl) {
+                timerValueEl.textContent = "00:00:00";
+            }
+            if (voteArea) {
+                voteArea.classList.add("d-none");
+            }
+            if (resultsArea) {
+                resultsArea.classList.remove("d-none");
+                resultsArea.classList.add("show-results");
+            }
+            if (makeDialogueForm) {
+                makeDialogueForm.classList.remove("d-none");
+            }
+        }
+
+        if (!timerValueEl) {
+            return;
+        }
+
+        if (!secondsLeft || secondsLeft <= 0) {
+            setClosedState();
+            return;
+        }
+
+        timerValueEl.textContent = formatDuration(secondsLeft);
+
+        const intervalId = setInterval(function () {
+            secondsLeft -= 1;
+            if (secondsLeft <= 0) {
+                clearInterval(intervalId);
+                setClosedState();
+                return;
+            }
+            timerValueEl.textContent = formatDuration(secondsLeft);
+        }, 1000);
+    });
+});
+</script>
+
+{% endblock %}

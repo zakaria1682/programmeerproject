@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 import requests
 from sqlalchemy import func, or_
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 
@@ -43,6 +43,9 @@ os.makedirs(BLOG_THUMB_UPLOAD_FOLDER, exist_ok=True)
 
 DIALOGUE_THUMB_UPLOAD_FOLDER = os.path.join(app.static_folder, "dialogue_thumbs")
 os.makedirs(DIALOGUE_THUMB_UPLOAD_FOLDER, exist_ok=True)
+
+OPINION_THUMB_UPLOAD_FOLDER = os.path.join(app.static_folder, "opinion_thumbs")
+os.makedirs(OPINION_THUMB_UPLOAD_FOLDER, exist_ok=True)
 
 
 # NL DATETIME
@@ -213,17 +216,54 @@ def logout():
 @app.route("/index", methods=["GET", "POST"])
 @login_required
 def index():
-    """User profile page and update profile"""
+    """User profile page and update profile (incl. optional password change)"""
 
     # Get current user
     user = User.query.get(session["user_id"])
 
-    # Update profile if POST
+
+    # Handle profile update via POST
     if request.method == "POST":
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
         email = request.form.get("email", "").strip()
 
+        current_password = (request.form.get("current_password") or "").strip()
+        new_password = (request.form.get("new_password") or "").strip()
+        confirmation = (request.form.get("confirmation") or "").strip()
+
+        
+        # Check if any password fields are filled
+        pw_fields_filled = any([current_password, new_password, confirmation])
+
+        # If any password fields are filled, all must be filled and validated
+        if pw_fields_filled:
+            if not current_password or not new_password or not confirmation:
+                flash("Vul alle wachtwoordvelden in.")
+                return redirect(url_for("index"))
+
+            # Check current password
+            if not check_password_hash(user.hash, current_password):
+                flash("Huidig wachtwoord is onjuist.")
+                return redirect(url_for("index"))
+
+            # Check new password matches confirmation
+            if new_password != confirmation:
+                flash("Nieuwe wachtwoorden komen niet overeen.")
+                return redirect(url_for("index"))
+
+            # New password must be different from current
+            if check_password_hash(user.hash, new_password):
+                flash("Het nieuwe wachtwoord moet anders zijn dan het huidige.")
+                return redirect(url_for("index"))
+
+            # Minimum length for new password
+            if len(new_password) < 3:
+                flash("Het nieuwe wachtwoord moet minstens 8 tekens lang zijn.")
+                return redirect(url_for("index"))
+            
+
+        # Update profile information
         if first_name:
             user.first_name = first_name
         if last_name:
@@ -238,9 +278,19 @@ def index():
             file.save(path)
             user.profile_image = filename
 
-        # Commit changes to database
+
+        # Update password
+        if pw_fields_filled:
+            user.hash = generate_password_hash(new_password)
+
+        # Commit everything at once
         db.session.commit()
-        flash("Profiel bijgewerkt.")
+
+        if pw_fields_filled:
+            flash("Profiel en wachtwoord bijgewerkt.")
+        else:
+            flash("Profiel bijgewerkt.")
+
         return redirect(url_for("index"))
 
     return render_template("index.html")
@@ -1089,11 +1139,294 @@ def edit_comment(comment_id):
         )
     )
 
-# OPINIE PAGE
-#--------------------------------------------------------------------------------------------------------------
-@app.route("/opinie")
+
+# OPINION POLLS PAGE
+# --------------------------------------------------------------------------------------------------
+@app.route("/opinie", methods=["GET"])
 def opinie():
-    return render_template("apology.html", top=200, bottom="Opiniepagina in de maak")
+    """Show all opinion polls, ordered by popularity, plus user vote info."""
+
+    # Get all polls ordered by total votes desc, then creation date desc
+    polls = (
+        OpinionPoll.query
+        .order_by((OpinionPoll.yes_count + OpinionPoll.no_count).desc(),
+                  OpinionPoll.created_at.desc())
+        .all()
+    )
+
+    # Current user (may be None)
+    user_id = session.get("user_id")
+    current_user = User.query.get(user_id) if user_id else None
+
+    # Get user's votes
+    user_votes = {}
+    if current_user:
+        votes = OpinionVote.query.filter_by(user_id=current_user.id).all()
+        for v in votes:
+            user_votes[v.poll_id] = "yes" if v.value == 1 else "no"
+
+    # Render template
+    return render_template(
+        "opinie.html",
+        polls=polls,
+        user=current_user,
+        user_votes=user_votes,
+        now_utc=datetime.utcnow(),
+    )
+
+
+# CREATE NEW OPINION POLL
+# --------------------------------------------------------------------------------------------------
+@app.route("/opinie/new", methods=["POST"])
+@login_required
+def new_opinie():
+    """Create a new opinion poll with default duration of 3 days."""
+
+    # Get current user
+    current_user = User.query.get(session["user_id"])
+
+    # Get and validate form data
+    question = (request.form.get("question") or "").strip()
+    description = (request.form.get("description") or "").strip()
+
+    # Backend length limits to keep cards compact
+    max_question_len = 80
+    max_description_len = 220
+
+    if not question:
+        flash("Vraag is verplicht.", "danger")
+        return redirect(url_for("opinie"))
+    if not description:
+        flash("Toelichting is verplicht.", "danger")
+        return redirect(url_for("opinie"))
+    if len(question) > max_question_len:
+        flash(f"Vraag mag maximaal {max_question_len} tekens bevatten.", "danger")
+        return redirect(url_for("opinie"))
+    if len(description) > max_description_len:
+        flash(f"Toelichting mag maximaal {max_description_len} tekens bevatten.", "danger")
+        return redirect(url_for("opinie"))
+
+    # Thumbnail is required
+    thumb_file = request.files.get("thumbnail")
+    if not thumb_file or not thumb_file.filename:
+        flash("Thumbnail is verplicht.", "danger")
+        return redirect(url_for("opinie"))
+
+    filename = secure_filename(thumb_file.filename)
+    path = os.path.join(OPINION_THUMB_UPLOAD_FOLDER, filename)
+    thumb_file.save(path)
+    thumb_filename = filename
+
+    # Default duration 3 days
+    expires_at = datetime.utcnow() + timedelta(days=3)
+
+    poll = OpinionPoll(
+        question=question,
+        description=description,
+        author_id=current_user.id,
+        thumbnail_image=thumb_filename,
+        created_at=datetime.utcnow(),
+        expires_at=expires_at,
+        yes_count=0,
+        no_count=0,
+        score=0,
+    )
+    db.session.add(poll)
+    db.session.commit()
+
+    flash("Nieuwe peiling gestart.", "success")
+    return redirect(url_for("opinie"))
+
+
+# VOTE ON OPINION POLL
+# --------------------------------------------------------------------------------------------------
+@app.route("/opinie/<int:poll_id>/vote", methods=["POST"])
+@login_required
+def vote_opinie(poll_id):
+    """Vote yes/no on an opinion poll."""
+
+    # Get the poll and current user
+    poll = OpinionPoll.query.get_or_404(poll_id)
+    current_user = User.query.get(session["user_id"])
+
+    # Use model property or datetime comparison for expiry
+    if poll.is_expired:
+        flash("Deze peiling is gesloten; stemmen is niet meer mogelijk.", "warning")
+        return redirect(url_for("opinie"))
+
+    choice = request.form.get("choice")
+    if choice not in ("yes", "no"):
+        abort(400)
+
+    # Map to +1 / -1
+    value = 1 if choice == "yes" else -1
+
+    # Check for existing vote
+    existing = OpinionVote.query.filter_by(
+        user_id=current_user.id,
+        poll_id=poll.id,
+    ).first()
+
+    if existing:
+        # Same vote again doesn't lead to change
+        if existing.value == value:
+            flash("Je hebt al zo gestemd op deze peiling.", "info")
+            return redirect(url_for("opinie"))
+
+        # Remove previous counts
+        if existing.value == 1:
+            poll.yes_count = max(0, (poll.yes_count or 0) - 1)
+        else:
+            poll.no_count = max(0, (poll.no_count or 0) - 1)
+
+        existing.value = value
+    else:
+        # New vote record
+        existing = OpinionVote(
+            user_id=current_user.id,
+            poll_id=poll.id,
+            value=value,
+        )
+        db.session.add(existing)
+
+    # Update counters and score
+    if value == 1:
+        poll.yes_count = (poll.yes_count or 0) + 1
+    else:
+        poll.no_count = (poll.no_count or 0) + 1
+
+    poll.score = (poll.yes_count or 0) - (poll.no_count or 0)
+
+    db.session.commit()
+    flash("Stem geregistreerd.", "success")
+    return redirect(url_for("opinie"))
+
+
+# UPDATE POLL DURATION (ADMIN / SUPERADMIN)
+# --------------------------------------------------------------------------------------------------
+@app.route("/opinie/<int:poll_id>/update-time", methods=["POST"])
+@login_required
+def update_poll_time(poll_id):
+    """Update the remaining time of a poll (admin/superadmin only)."""
+
+    poll = OpinionPoll.query.get_or_404(poll_id)
+    current_user = User.query.get(session["user_id"])
+
+    # Only admins and superadmins may change timing for any poll
+    if not current_user or not (
+        current_user.has_role("admin") or current_user.has_role("superadmin")
+    ):
+        abort(403)
+
+    # Parse duration value and unit
+    raw_value = (request.form.get("duration_value") or "").strip()
+    unit = (request.form.get("duration_unit") or "seconds").strip()
+
+    try:
+        value = int(raw_value)
+    except ValueError:
+        flash("Voer een geldig getal in voor de duur.", "danger")
+        return redirect(url_for("opinie"))
+
+    if value <= 0:
+        flash("Duur moet groter zijn dan 0.", "danger")
+        return redirect(url_for("opinie"))
+
+    # Convert to seconds
+    factor_map = {
+        "seconds": 1,
+        "minutes": 60,
+        "hours": 3600,
+        "days": 86400,
+    }
+    factor = factor_map.get(unit, 1)
+    total_seconds = value * factor
+
+    # polltime between 10 seconds and 30 days
+    min_seconds = 10
+    max_seconds = 30 * 24 * 3600
+    if total_seconds < min_seconds or total_seconds > max_seconds:
+        flash("Duur moet tussen 10 seconden en 30 dagen liggen.", "danger")
+        return redirect(url_for("opinie"))
+
+    # Update expiry time
+    poll.expires_at = datetime.utcnow() + timedelta(seconds=total_seconds)
+    db.session.commit()
+
+    flash("Peilingtijd bijgewerkt.", "success")
+    return redirect(url_for("opinie"))
+
+
+# DELETE OPINION POLL
+# --------------------------------------------------------------------------------------------------
+@app.route("/opinie/<int:poll_id>/delete", methods=["POST"])
+@login_required
+def delete_opinie(poll_id):
+    """Delete an opinion poll (only creator, admin or superadmin)."""
+
+    # Get the poll and current user
+    poll = OpinionPoll.query.get_or_404(poll_id)
+    current_user = User.query.get(session["user_id"])
+
+    # Check permissions
+    allowed = (
+        current_user.id == poll.author_id
+        or current_user.has_role("admin")
+        or current_user.has_role("superadmin")
+    )
+    if not allowed:
+        abort(403)
+
+    # Delete the poll
+    db.session.delete(poll)
+    db.session.commit()
+    flash("Peiling verwijderd.", "success")
+    return redirect(url_for("opinie"))
+
+
+# MAKE DIALOGUE FROM POLL
+# --------------------------------------------------------------------------------------------------
+@app.route("/opinie/<int:poll_id>/make-dialogue", methods=["POST"])
+@login_required
+def poll_make_dialogue(poll_id):
+    """Create a dialogue thread from an opinion poll."""
+
+    # Get the poll and current user
+    poll = OpinionPoll.query.get_or_404(poll_id)
+    current = User.query.get(session["user_id"])
+
+    # Only the poll creator, admin or superadmin can convert
+    if poll.dialogue_thread_id:
+        return redirect(url_for("view_thread", thread_id=poll.dialogue_thread_id))
+
+    # Copy original thumbnail to dialogue folder
+    thumb_filename = None
+    if poll.thumbnail_image:
+        thumb_filename = poll.thumbnail_image
+        src = os.path.join(OPINION_THUMB_UPLOAD_FOLDER, thumb_filename)
+        dst = os.path.join(DIALOGUE_THUMB_UPLOAD_FOLDER, thumb_filename)
+        try:
+            if os.path.exists(src) and not os.path.exists(dst):
+                shutil.copy2(src, dst)
+        except Exception:
+            thumb_filename = None
+
+    # Create dialogue thread based on the poll
+    thread = DialogueThread(
+        title=poll.question[:255],
+        body=poll.description or None,
+        author_id=current.id,
+        thumbnail_image=thumb_filename,
+    )
+    db.session.add(thread)
+    db.session.flush() 
+
+    poll.dialogue_thread_id = thread.id
+    db.session.commit()
+
+    flash("Dialoog aangemaakt voor deze peiling.", "success")
+    return redirect(url_for("view_thread", thread_id=thread.id))
+
 
 # CONTACT PAGE
 #--------------------------------------------------------------------------------------------------------------

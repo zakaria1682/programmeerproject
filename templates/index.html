@@ -43,6 +43,12 @@
         object-fit: cover;
         border: 2px solid rgba(148,163,253,0.7);
     }
+
+    .disabled-input {
+        background-color: #1f2937 !important;
+        color: #9ca3af !important;
+        cursor: not-allowed;
+    }
 </style>
 {% endblock %}
 
@@ -101,93 +107,129 @@
 
             <form method="post" enctype="multipart/form-data">
 
-            <script>
-                function enableEdit() {
-                    const inputs = document.querySelectorAll(".editable-field");
-                    inputs.forEach(i => {
-                        i.removeAttribute("readonly");
-                        i.classList.remove("disabled-input");
-                    });
+                <script>
+                    function enableEdit() {
+                        const inputs = document.querySelectorAll(".editable-field");
+                        inputs.forEach(i => {
+                            i.removeAttribute("readonly");
+                            i.classList.remove("disabled-input");
+                        });
 
-                    document.getElementById("profile_image").removeAttribute("disabled");
+                        const profileImage = document.getElementById("profile_image");
+                        if (profileImage) {
+                            profileImage.removeAttribute("disabled");
+                        }
 
-                    document.getElementById("edit-btn").style.display = "none";
+                        document.getElementById("edit-btn").style.display = "none";
+                        document.getElementById("save-btn").style.display = "inline-block";
+                    }
+                </script>
 
-                    document.getElementById("save-btn").style.display = "inline-block";
-                }
-            </script>
+                <div class="row g-3">
 
-            <style>
-                .disabled-input {
-                    background-color: #1f2937 !important;   
-                    color: #9ca3af !important;            
-                    cursor: not-allowed;
-                }
-            </style>
+                    <div class="col-md-6">
+                        <label for="first_name" class="form-label">Voornaam</label>
+                        <input type="text"
+                               class="form-control editable-field disabled-input"
+                               id="first_name"
+                               name="first_name"
+                               value="{{ user.first_name or '' }}"
+                               readonly>
+                    </div>
 
-            <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="last_name" class="form-label">Achternaam</label>
+                        <input type="text"
+                               class="form-control editable-field disabled-input"
+                               id="last_name"
+                               name="last_name"
+                               value="{{ user.last_name or '' }}"
+                               readonly>
+                    </div>
 
-                <div class="col-md-6">
-                    <label for="first_name" class="form-label">Voornaam</label>
-                    <input type="text"
-                        class="form-control editable-field disabled-input"
-                        id="first_name"
-                        name="first_name"
-                        value="{{ user.first_name or '' }}"
-                        readonly>
+                    <div class="col-md-8">
+                        <label for="email" class="form-label">E-mail adres</label>
+                        <input type="email"
+                               class="form-control editable-field disabled-input"
+                               id="email"
+                               name="email"
+                               value="{{ user.email or '' }}"
+                               readonly>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="profile_image" class="form-label">Profielfoto</label>
+                        <input type="file"
+                               class="form-control"
+                               id="profile_image"
+                               name="profile_image"
+                               accept="image/*"
+                               disabled>
+                    </div>
+
                 </div>
 
-                <div class="col-md-6">
-                    <label for="last_name" class="form-label">Achternaam</label>
-                    <input type="text"
-                        class="form-control editable-field disabled-input"
-                        id="last_name"
-                        name="last_name"
-                        value="{{ user.last_name or '' }}"
-                        readonly>
+                <hr class="mt-4 mb-3" style="border-color: rgba(55,65,81,0.7);">
+
+                <h4 class="mb-2">Wachtwoord wijzigen</h4>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="current_password" class="form-label">
+                            Huidig wachtwoord
+                        </label>
+                        <input type="password"
+                               class="form-control editable-field disabled-input"
+                               id="current_password"
+                               name="current_password"
+                               value=""
+                               readonly>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="new_password" class="form-label">
+                            Nieuw wachtwoord
+                        </label>
+                        <input type="password"
+                               class="form-control editable-field disabled-input"
+                               id="new_password"
+                               name="new_password"
+                               value=""
+                               readonly>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="confirmation" class="form-label">
+                            Bevestig nieuw wachtwoord
+                        </label>
+                        <input type="password"
+                               class="form-control editable-field disabled-input"
+                               id="confirmation"
+                               name="confirmation"
+                               value=""
+                               readonly>
+                    </div>
                 </div>
 
-                <div class="col-md-8">
-                    <label for="email" class="form-label">E-mail adres</label>
-                    <input type="email"
-                        class="form-control editable-field disabled-input"
-                        id="email"
-                        name="email"
-                        value="{{ user.email or '' }}"
-                        readonly>
+                <div class="d-flex justify-content-end mt-3 gap-2">
+
+                    <button type="button"
+                            id="edit-btn"
+                            class="btn btn-secondary"
+                            onclick="enableEdit()">
+                        Gegevens wijzigen
+                    </button>
+
+                    <button type="submit"
+                            id="save-btn"
+                            class="btn btn-primary"
+                            style="display:none;">
+                        Gegevens opslaan
+                    </button>
+
                 </div>
 
-                <div class="col-md-4">
-                    <label for="profile_image" class="form-label">Profielfoto</label>
-                    <input type="file"
-                        class="form-control"
-                        id="profile_image"
-                        name="profile_image"
-                        accept="image/*"
-                        disabled>
-                </div>
-
-            </div>
-
-            <div class="d-flex justify-content-end mt-3 gap-2">
-
-                <button type="button"
-                        id="edit-btn"
-                        class="btn btn-secondary"
-                        onclick="enableEdit()">
-                    Gegevens wijzigen
-                </button>
-
-                <button type="submit"
-                        id="save-btn"
-                        class="btn btn-primary"
-                        style="display:none;">
-                    Gegevens opslaan
-                </button>
-
-            </div>
-
-        </form>
+            </form>
 
         </div>
 
