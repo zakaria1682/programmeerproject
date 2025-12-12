@@ -801,8 +801,6 @@ def new_dialoog():
     return render_template("new_dialoog.html")
 
 
-
-
 # VIEW DIALOOG THREAD
 #--------------------------------------------------------------------------------------------------------------
 @app.route("/dialoog/<int:thread_id>", methods=["GET", "POST"])
@@ -976,7 +974,7 @@ def vote_thread(thread_id):
     thread = DialogueThread.query.get_or_404(thread_id)
     current_user = User.query.get(session["user_id"])
 
-    # Get vote direction
+    # Get vote direction from form
     direction = request.form.get("direction")
     if direction not in ("up", "down"):
         abort(400)

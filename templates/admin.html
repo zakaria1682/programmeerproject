@@ -4,143 +4,11 @@
     Admin
 {% endblock %}
 
-{% block extra_head %}
-<style>
-    .admin-card {
-        background: radial-gradient(circle at 0% 0%, rgba(129, 140, 248, 0.25), transparent 55%),
-                    radial-gradient(circle at 100% 100%, rgba(56, 189, 248, 0.18), transparent 55%),
-                    rgba(15, 23, 42, 0.96);
-        border-radius: 20px;
-        border: 1px solid rgba(148, 163, 253, 0.6);
-        box-shadow:
-            0 22px 60px rgba(15, 23, 42, 0.9),
-            0 0 30px rgba(56, 189, 248, 0.25);
-        padding: 24px 26px 18px;
-    }
-
-    .admin-header-title {
-        font-size: 1.8rem;
-        font-weight: 600;
-        margin-bottom: 4px;
-    }
-
-    .admin-header-sub {
-        font-size: 0.95rem;
-        color: rgba(209, 213, 219, 0.85);
-    }
-
-    .admin-search-input {
-        background: rgba(15, 23, 42, 0.9);
-        border-radius: 999px;
-        border: 1px solid rgba(148, 163, 253, 0.6);
-        color: #e5e7eb;
-    }
-
-    .admin-search-input:focus {
-        box-shadow: 0 0 0 0.15rem rgba(129, 140, 248, 0.6);
-        border-color: rgba(129, 140, 248, 0.9);
-        background: rgba(15, 23, 42, 0.98);
-        color: #f9fafb;
-    }
-
-    .admin-table {
-        margin-top: 14px;
-        border-collapse: separate;
-        border-spacing: 0 8px; 
-    }
-
-    .admin-table thead th {
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        border: none;
-        color: rgba(209, 213, 219, 0.9);
-        padding-bottom: 0.35rem;
-    }
-
-    .admin-row {
-        background: rgba(15, 23, 42, 0.95);
-        border-radius: 14px;
-        border: 1px solid rgba(55, 65, 81, 0.9);
-        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.85);
-        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
-    }
-
-    .admin-row:hover {
-        transform: translateY(-2px);
-        border-color: rgba(129, 140, 248, 0.9);
-        box-shadow:
-            0 20px 40px rgba(15, 23, 42, 0.95),
-            0 0 20px rgba(129, 140, 248, 0.55);
-    }
-
-    .admin-table td {
-        border-top: none;
-        border-bottom: none;
-        padding: 0.65rem 0.85rem;
-        vertical-align: middle;
-        color: #e5e7eb;
-    }
-
-    .admin-cell-id {
-        width: 60px;
-        font-size: 0.85rem;
-        color: rgba(148, 163, 253, 0.9);
-    }
-
-    .admin-cell-username {
-        font-weight: 500;
-        font-size: 1rem;
-    }
-
-    .admin-cell-date {
-        font-size: 0.85rem;
-        color: rgba(156, 163, 175, 0.9);
-        white-space: nowrap;
-    }
-
-    .role-pill {
-        display: inline-block;
-        padding: 0.17rem 0.55rem;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        margin-right: 0.25rem;
-        margin-bottom: 0.15rem;
-        border: 1px solid rgba(148, 163, 253, 0.6);
-        background: linear-gradient(135deg, rgba(79, 70, 229, 0.9), rgba(59, 130, 246, 0.9));
-        color: #f9fafb;
-    }
-
-    .role-pill.role-user {
-        background: linear-gradient(135deg, rgba(55, 65, 81, 0.95), rgba(75, 85, 99, 0.95));
-    }
-
-    .role-pill.role-author {
-        background: linear-gradient(135deg, rgba(244, 114, 182, 0.95), rgba(129, 140, 248, 0.95));
-    }
-
-    .role-pill.role-admin {
-        background: linear-gradient(135deg, rgba(52, 211, 153, 0.95), rgba(16, 185, 129, 0.95));
-    }
-
-    .role-pill.role-superadmin {
-        background: linear-gradient(135deg, #f97316, #ec4899);
-        box-shadow: 0 0 0 1px rgba(248, 250, 252, 0.4);
-    }
-
-    .admin-details-btn {
-        border-radius: 999px;
-        padding: 0.25rem 0.9rem;
-        font-size: 0.8rem;
-        border-width: 1px;
-    }
-</style>
-{% endblock %}
+{% block extra_head %}{% endblock %}
 
 {% block main %}
 
-<div class="container mt-4" style="max-width: 1000px; color: #f9fafb;">
+<div class="container mt-4 admin-container">
 
     <div class="admin-card">
 
@@ -196,7 +64,7 @@
                                         </span>
                                     {% endfor %}
                                 {% else %}
-                                    <span class="text-muted" style="font-size:0.8rem;">
+                                    <span class="admin-no-roles text-muted">
                                         geen rollen
                                     </span>
                                 {% endif %}
