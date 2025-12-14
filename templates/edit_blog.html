@@ -4,25 +4,7 @@
     Blog bewerken
 {% endblock %}
 
-{% block extra_head %}
-<script src="https://cdn.tiny.cloud/1/nvg3ndzh1qg2hmfddgvv090pum9okoxshvqwlee6vrthjnfo/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-
-<script>
-  tinymce.init({
-    selector: '#content',
-    plugins: 'link lists image media code',
-    toolbar: 'undo redo | blocks | bold italic | ' +
-             'alignleft aligncenter alignright | bullist numlist | ' +
-             'link image media | code',
-    automatic_uploads: true,
-    images_upload_url: "{{ url_for('upload_image') }}",
-    images_upload_credentials: true,
-
-    media_live_embeds: true,
-    extended_valid_elements: 'iframe[src|frameborder|style|scrolling|class|width|height|name|align|allowfullscreen]'
-  });
-</script>
-{% endblock %}
+{% block extra_head %} {% endblock %}
 
 {% block main %}
 
@@ -44,7 +26,9 @@
                        id="title"
                        name="title"
                        value="{{ post.title }}"
-                       required>
+                       required
+                       maxlength="255"
+                       placeholder="Titel van de blog (max 255 tekens)">
             </div>
 
             <div class="mb-3">
