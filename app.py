@@ -10,6 +10,10 @@ from sqlalchemy import func, or_
 import shutil
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from llm_guard import guard_text, guard_image
+import tempfile
+
+
 
 
 from models import * 
@@ -489,20 +493,98 @@ def new_blog():
         if not content:
             errors.append("Inhoud is verplicht.")
 
+        pending_blocks = []
+        should_block = False
+
         # Process thumbnail
         thumb_file = request.files.get("thumbnail_image")
         thumb_filename = None
         if thumb_file and thumb_file.filename:
-            filename = secure_filename(thumb_file.filename)
-            path = os.path.join(BLOG_THUMB_UPLOAD_FOLDER, filename)
-            thumb_file.save(path)
-            thumb_filename = filename
+            import tempfile
+
+            with tempfile.NamedTemporaryFile(
+                delete=False,
+                suffix=os.path.splitext(thumb_file.filename)[1] or ".jpg"
+            ) as tmp:
+                tmp_path = tmp.name
+                thumb_file.save(tmp_path)
+
+            decision_img = guard_image(tmp_path, context="blog_thumbnail")
+
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
+
+            if decision_img.get("action") in ("block", "review"):
+                cats = decision_img.get("categories", {}) or {}
+
+                if cats.get("nsfw"):
+                    pending_blocks.append(
+                        "Post tegengehouden: Mogelijk seksueel expliciete afbeelding gedetecteerd"
+                    )
+                    should_block = True
+
+                if cats.get("gore"):
+                    pending_blocks.append(
+                        "Post tegengehouden: Mogelijk gewelddadige/bloederige afbeelding gedetecteerd"
+                    )
+                    should_block = True
+
+                if cats.get("offensive_symbols"):
+                    pending_blocks.append(
+                        "Post tegengehouden: Mogelijk aanstootgevende symbolen gedetecteerd"
+                    )
+                    should_block = True
+
+                if not pending_blocks:
+                    pending_blocks.append(
+                        "Post tegengehouden: Ongewenste afbeelding gedetecteerd."
+                    )
+                    should_block = True
 
         if errors:
             for e in errors:
                 flash(e, "danger")
             return render_template("new_blog.html", title=title, content=content)
+        
+        # text Content moderation via LLM guard
+        decision = guard_text(title=title, body=content, context="blog_post")
+        if decision.get("action") in ("block", "review"):
+            found = decision.get("found", {})
+            prof = found.get("profanity_terms", []) or []
+            sus_urls = found.get("suspicious_urls", []) or []
 
+            if prof:
+                pending_blocks.append(
+                    "Post tegengehouden: Mogelijke scheldwoorden gedetecteerd: "
+                    + ", ".join(prof[:10])
+                )
+                should_block = True
+
+            if sus_urls:
+                pending_blocks.append(
+                    "Post tegengehouden: Mogelijk schadelijke link gedetecteerd: "
+                    + ", ".join(sus_urls[:5])
+                )
+                should_block = True
+
+            if not prof and not sus_urls:
+                pending_blocks.append("Post tegengehouden: Ongewenste inhoud gedetecteerd.")
+                should_block = True
+
+        if should_block:
+            for msg in pending_blocks:
+                flash(msg, "danger")
+            return render_template("new_blog.html", title=title, content=content)
+
+        if thumb_file and thumb_file.filename:
+            thumb_file.stream.seek(0)
+            filename = secure_filename(thumb_file.filename)
+            path = os.path.join(BLOG_THUMB_UPLOAD_FOLDER, filename)
+            thumb_file.save(path)
+            thumb_filename = filename
+        
         # Create and save new blog post
         post = BlogPost(
             title=title,
