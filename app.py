@@ -13,13 +13,13 @@ from zoneinfo import ZoneInfo
 from llm_guard import guard_text, guard_image
 import tempfile
 
-
-
-
 from models import * 
+
 
 app = Flask(__name__)
 
+# 5 MB upload limit
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024 
 
 
 # Check for environment variable
@@ -280,6 +280,16 @@ def index():
             filename = secure_filename(file.filename)
             path = os.path.join(PROFILE_UPLOAD_FOLDER, filename)
             file.save(path)
+
+            # Image content moderation via LLM guard
+            decision_img = guard_image(path, context="profile_image")
+            if decision_img.get("action") == "block":
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
+                flash("Upload tegengehouden: ongewenste afbeelding gedetecteerd.", "danger")
+                return redirect(url_for("index"))
             user.profile_image = filename
 
 
@@ -509,6 +519,7 @@ def new_blog():
                 tmp_path = tmp.name
                 thumb_file.save(tmp_path)
 
+            # Image content moderation via LLM guard
             decision_img = guard_image(tmp_path, context="blog_thumbnail")
 
             try:
@@ -516,7 +527,7 @@ def new_blog():
             except Exception:
                 pass
 
-            if decision_img.get("action") in ("block", "review"):
+            if decision_img.get("action") == "block":
                 cats = decision_img.get("categories", {}) or {}
 
                 if cats.get("nsfw"):
@@ -548,9 +559,9 @@ def new_blog():
                 flash(e, "danger")
             return render_template("new_blog.html", title=title, content=content)
         
-        # text Content moderation via LLM guard
+        # Text Content moderation via LLM guard
         decision = guard_text(title=title, body=content, context="blog_post")
-        if decision.get("action") in ("block", "review"):
+        if decision.get("action") == "block":
             found = decision.get("found", {})
             prof = found.get("profanity_terms", []) or []
             sus_urls = found.get("suspicious_urls", []) or []
@@ -621,6 +632,15 @@ def upload_image():
     # Save file
     path = os.path.join(upload_dir, filename)
     file.save(path)
+
+    # Image content moderation via LLM guard
+    decision_img = guard_image(path, context="tinymce_upload")
+    if decision_img.get("action") == "block":
+        try:
+            os.remove(path)
+        except Exception:
+            pass
+        return {"error": "Upload tegengehouden: ongewenste afbeelding gedetecteerd."}, 400
 
     # Return the file URL for TinyMCE
     file_url = url_for("static", filename=f"uploads/{filename}", _external=False)
@@ -699,6 +719,34 @@ def edit_blog(post_id):
             flash("Titel en inhoud zijn verplicht.", "danger")
             return render_template("edit_blog.html", post=post)
 
+        pending_blocks = []
+        should_block = False
+
+        #  Text Content moderation via LLM guard
+        decision = guard_text(title=title, body=content, context="blog_post_edit")
+        if decision.get("action") == "block":
+            found = decision.get("found", {})
+            prof = found.get("profanity_terms", []) or []
+            sus_urls = found.get("suspicious_urls", []) or []
+
+            if prof:
+                pending_blocks.append(
+                    "Post tegengehouden: Mogelijke scheldwoorden gedetecteerd: "
+                    + ", ".join(prof[:10])
+                )
+                should_block = True
+
+            if sus_urls:
+                pending_blocks.append(
+                    "Post tegengehouden: Mogelijk schadelijke link gedetecteerd: "
+                    + ", ".join(sus_urls[:5])
+                )
+                should_block = True
+
+            if not prof and not sus_urls:
+                pending_blocks.append("Post tegengehouden: Ongewenste inhoud gedetecteerd.")
+                should_block = True
+
         post.title = title
         post.content = content
 
@@ -708,7 +756,34 @@ def edit_blog(post_id):
             filename = secure_filename(file.filename)
             path = os.path.join(BLOG_THUMB_UPLOAD_FOLDER, filename)
             file.save(path)
-            post.thumbnail_image = filename
+
+            # Image content moderation via LLM guard
+            decision_img = guard_image(path, context="blog_thumbnail_edit")
+            if decision_img.get("action") == "block":
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
+                cats = decision_img.get("categories", {}) or {}
+                if cats.get("nsfw"):
+                    pending_blocks.append("Post tegengehouden: Mogelijk seksueel expliciete afbeelding gedetecteerd")
+                    should_block = True
+                if cats.get("gore"):
+                    pending_blocks.append("Post tegengehouden: Mogelijk gewelddadige/bloederige afbeelding gedetecteerd")
+                    should_block = True
+                if cats.get("offensive_symbols"):
+                    pending_blocks.append("Post tegengehouden: Mogelijk aanstootgevende symbolen gedetecteerd")
+                    should_block = True
+                if not cats.get("nsfw") and not cats.get("gore") and not cats.get("offensive_symbols"):
+                    pending_blocks.append("Post tegengehouden: Ongewenste afbeelding gedetecteerd.")
+                    should_block = True
+            else:
+                post.thumbnail_image = filename
+
+        if should_block:
+            for msg in pending_blocks:
+                flash(msg, "danger")
+            return render_template("edit_blog.html", post=post)
 
         db.session.commit()
 
@@ -847,6 +922,34 @@ def new_dialoog():
         if not title:
             errors.append("Titel is verplicht.")
 
+        pending_blocks = []
+        should_block = False
+
+        #  Text Content moderation via LLM guard
+        decision = guard_text(title=title, body=body, context="dialogue_thread")
+        if decision.get("action") == "block":
+            found = decision.get("found", {})
+            prof = found.get("profanity_terms", []) or []
+            sus_urls = found.get("suspicious_urls", []) or []
+
+            if prof:
+                pending_blocks.append(
+                    "Post tegengehouden: Mogelijke scheldwoorden gedetecteerd: "
+                    + ", ".join(prof[:10])
+                )
+                should_block = True
+
+            if sus_urls:
+                pending_blocks.append(
+                    "Post tegengehouden: Mogelijk schadelijke link gedetecteerd: "
+                    + ", ".join(sus_urls[:5])
+                )
+                should_block = True
+
+            if not prof and not sus_urls:
+                pending_blocks.append("Post tegengehouden: Ongewenste inhoud gedetecteerd.")
+                should_block = True
+
         # Process thumbnail (image or video)
         thumb_file = request.files.get("thumbnail")
         thumb_filename = None
@@ -854,12 +957,43 @@ def new_dialoog():
             filename = secure_filename(thumb_file.filename)
             path = os.path.join(DIALOGUE_THUMB_UPLOAD_FOLDER, filename)
             thumb_file.save(path)
-            thumb_filename = filename
+
+            # Image content moderation via LLM guard
+            decision_img = guard_image(path, context="dialogue_thumbnail")
+            if decision_img.get("action") == "block":
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
+                cats = decision_img.get("categories", {}) or {}
+                if cats.get("nsfw"):
+                    pending_blocks.append("Post tegengehouden: Mogelijk seksueel expliciete afbeelding gedetecteerd")
+                    should_block = True
+                if cats.get("gore"):
+                    pending_blocks.append("Post tegengehouden: Mogelijk gewelddadige/bloederige afbeelding gedetecteerd")
+                    should_block = True
+                if cats.get("offensive_symbols"):
+                    pending_blocks.append("Post tegengehouden: Mogelijk aanstootgevende symbolen gedetecteerd")
+                    should_block = True
+                if not cats.get("nsfw") and not cats.get("gore") and not cats.get("offensive_symbols"):
+                    pending_blocks.append("Post tegengehouden: Ongewenste afbeelding gedetecteerd.")
+                    should_block = True
+            else:
+                thumb_filename = filename
 
         # Show errors if any
         if errors:
             for e in errors:
                 flash(e, "danger")
+            return render_template(
+                "new_dialoog.html",
+                title=title,
+                body=body,
+            )
+
+        if should_block:
+            for msg in pending_blocks:
+                flash(msg, "danger")
             return render_template(
                 "new_dialoog.html",
                 title=title,
@@ -909,6 +1043,39 @@ def view_thread(thread_id):
         if not body:
             flash("Reactie mag niet leeg zijn.", "danger")
         else:
+            pending_blocks = []
+            should_block = False
+
+            #  Text Content moderation via LLM guard
+            decision = guard_text(title="", body=body, context="dialogue_comment")
+            if decision.get("action") == "block":
+                found = decision.get("found", {})
+                prof = found.get("profanity_terms", []) or []
+                sus_urls = found.get("suspicious_urls", []) or []
+
+                if prof:
+                    pending_blocks.append(
+                        "Post tegengehouden: Mogelijke scheldwoorden gedetecteerd: "
+                        + ", ".join(prof[:10])
+                    )
+                    should_block = True
+
+                if sus_urls:
+                    pending_blocks.append(
+                        "Post tegengehouden: Mogelijk schadelijke link gedetecteerd: "
+                        + ", ".join(sus_urls[:5])
+                    )
+                    should_block = True
+
+                if not prof and not sus_urls:
+                    pending_blocks.append("Post tegengehouden: Ongewenste inhoud gedetecteerd.")
+                    should_block = True
+
+            if should_block:
+                for msg in pending_blocks:
+                    flash(msg, "danger")
+                return redirect(url_for("view_thread", thread_id=thread.id, _anchor="comments"))
+
             comment = DialogueComment(
                 body=body,
                 author_id=current_user.id,
@@ -990,6 +1157,34 @@ def edit_thread(thread_id):
         flash("Titel mag niet leeg zijn.", "danger")
         return redirect(url_for("view_thread", thread_id=thread.id))
 
+    pending_blocks = []
+    should_block = False
+
+    #  Text Content moderation via LLM guard
+    decision = guard_text(title=title, body=body, context="dialogue_thread_edit")
+    if decision.get("action") == "block":
+        found = decision.get("found", {})
+        prof = found.get("profanity_terms", []) or []
+        sus_urls = found.get("suspicious_urls", []) or []
+
+        if prof:
+            pending_blocks.append(
+                "Post tegengehouden: Mogelijke scheldwoorden gedetecteerd: "
+                + ", ".join(prof[:10])
+            )
+            should_block = True
+
+        if sus_urls:
+            pending_blocks.append(
+                "Post tegengehouden: Mogelijk schadelijke link gedetecteerd: "
+                + ", ".join(sus_urls[:5])
+            )
+            should_block = True
+
+        if not prof and not sus_urls:
+            pending_blocks.append("Post tegengehouden: Ongewenste inhoud gedetecteerd.")
+            should_block = True
+
     # Update thread
     thread.title = title
     thread.body = body or None
@@ -1000,7 +1195,34 @@ def edit_thread(thread_id):
         filename = secure_filename(file.filename)
         path = os.path.join(DIALOGUE_THUMB_UPLOAD_FOLDER, filename)
         file.save(path)
-        thread.thumbnail_image = filename
+
+        # Image content moderation via LLM guard
+        decision_img = guard_image(path, context="dialogue_thumbnail_edit")
+        if decision_img.get("action") == "block":
+            try:
+                os.remove(path)
+            except Exception:
+                pass
+            cats = decision_img.get("categories", {}) or {}
+            if cats.get("nsfw"):
+                pending_blocks.append("Post tegengehouden: Mogelijk seksueel expliciete afbeelding gedetecteerd")
+                should_block = True
+            if cats.get("gore"):
+                pending_blocks.append("Post tegengehouden: Mogelijk gewelddadige/bloederige afbeelding gedetecteerd")
+                should_block = True
+            if cats.get("offensive_symbols"):
+                pending_blocks.append("Post tegengehouden: Mogelijk aanstootgevende symbolen gedetecteerd")
+                should_block = True
+            if not cats.get("nsfw") and not cats.get("gore") and not cats.get("offensive_symbols"):
+                pending_blocks.append("Post tegengehouden: Ongewenste afbeelding gedetecteerd.")
+                should_block = True
+        else:
+            thread.thumbnail_image = filename
+
+    if should_block:
+        for msg in pending_blocks:
+            flash(msg, "danger")
+        return redirect(url_for("view_thread", thread_id=thread.id))
 
     db.session.commit()
     flash("Dialoog bijgewerkt.", "success")
@@ -1207,6 +1429,45 @@ def edit_comment(comment_id):
     if not body:
         flash("Reactie mag niet leeg zijn.", "danger")
     else:
+        pending_blocks = []
+        should_block = False
+
+        #  Text Content moderation via LLM guard
+        decision = guard_text(title="", body=body, context="dialogue_comment_edit")
+        if decision.get("action") == "block":
+            found = decision.get("found", {})
+            prof = found.get("profanity_terms", []) or []
+            sus_urls = found.get("suspicious_urls", []) or []
+
+            if prof:
+                pending_blocks.append(
+                    "Post tegengehouden: Mogelijke scheldwoorden gedetecteerd: "
+                    + ", ".join(prof[:10])
+                )
+                should_block = True
+
+            if sus_urls:
+                pending_blocks.append(
+                    "Post tegengehouden: Mogelijk schadelijke link gedetecteerd: "
+                    + ", ".join(sus_urls[:5])
+                )
+                should_block = True
+
+            if not prof and not sus_urls:
+                pending_blocks.append("Post tegengehouden: Ongewenste inhoud gedetecteerd.")
+                should_block = True
+
+        if should_block:
+            for msg in pending_blocks:
+                flash(msg, "danger")
+            return redirect(
+                url_for(
+                    "view_thread",
+                    thread_id=comment.thread_id,
+                    _anchor=f"comment-{comment.id}"
+                )
+            )
+
         comment.body = body
         db.session.commit()
         flash("Reactie bijgewerkt.", "success")
@@ -1286,6 +1547,39 @@ def new_opinie():
         flash(f"Toelichting mag maximaal {max_description_len} tekens bevatten.", "danger")
         return redirect(url_for("opinie"))
 
+    pending_blocks = []
+    should_block = False
+
+    #  Text Content moderation via LLM guard
+    decision = guard_text(title=question, body=description, context="opinion_poll")
+    if decision.get("action") == "block":
+        found = decision.get("found", {})
+        prof = found.get("profanity_terms", []) or []
+        sus_urls = found.get("suspicious_urls", []) or []
+
+        if prof:
+            pending_blocks.append(
+                "Post tegengehouden: Mogelijke scheldwoorden gedetecteerd: "
+                + ", ".join(prof[:10])
+            )
+            should_block = True
+
+        if sus_urls:
+            pending_blocks.append(
+                "Post tegengehouden: Mogelijk schadelijke link gedetecteerd: "
+                + ", ".join(sus_urls[:5])
+            )
+            should_block = True
+
+        if not prof and not sus_urls:
+            pending_blocks.append("Post tegengehouden: Ongewenste inhoud gedetecteerd.")
+            should_block = True
+
+    if should_block:
+        for msg in pending_blocks:
+            flash(msg, "danger")
+        return redirect(url_for("opinie"))
+
     # Thumbnail is required
     thumb_file = request.files.get("thumbnail")
     if not thumb_file or not thumb_file.filename:
@@ -1295,6 +1589,16 @@ def new_opinie():
     filename = secure_filename(thumb_file.filename)
     path = os.path.join(OPINION_THUMB_UPLOAD_FOLDER, filename)
     thumb_file.save(path)
+
+    # Image content moderation via LLM guard
+    decision_img = guard_image(path, context="opinion_thumbnail")
+    if decision_img.get("action") == "block":
+        try:
+            os.remove(path)
+        except Exception:
+            pass
+        flash("Upload tegengehouden: ongewenste afbeelding gedetecteerd.", "danger")
+        return redirect(url_for("opinie"))
     thumb_filename = filename
 
     # Default duration 3 days
@@ -1539,6 +1843,45 @@ def contact():
         if errors:
             for e in errors:
                 flash(e, "danger")
+            return render_template(
+                "contact.html",
+                name=name,
+                email=email,
+                subject=subject,
+                message=message,
+            )
+
+        pending_blocks = []
+        should_block = False
+
+        #  Text Content moderation via LLM guard
+        decision = guard_text(title=subject, body=message, context="contact_form")
+        if decision.get("action") == "block":
+            found = decision.get("found", {})
+            prof = found.get("profanity_terms", []) or []
+            sus_urls = found.get("suspicious_urls", []) or []
+
+            if prof:
+                pending_blocks.append(
+                    "Post tegengehouden: Mogelijke scheldwoorden gedetecteerd: "
+                    + ", ".join(prof[:10])
+                )
+                should_block = True
+
+            if sus_urls:
+                pending_blocks.append(
+                    "Post tegengehouden: Mogelijk schadelijke link gedetecteerd: "
+                    + ", ".join(sus_urls[:5])
+                )
+                should_block = True
+
+            if not prof and not sus_urls:
+                pending_blocks.append("Post tegengehouden: Ongewenste inhoud gedetecteerd.")
+                should_block = True
+
+        if should_block:
+            for msg in pending_blocks:
+                flash(msg, "danger")
             return render_template(
                 "contact.html",
                 name=name,
