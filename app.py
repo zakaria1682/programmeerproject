@@ -12,6 +12,9 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from llm_guard import guard_text, guard_image
 import tempfile
+from dotenv import load_dotenv
+load_dotenv()
+
 
 from models import * 
 
@@ -521,7 +524,6 @@ def new_blog():
 
             # Image content moderation via LLM guard
             decision_img = guard_image(tmp_path, context="blog_thumbnail")
-
             try:
                 os.remove(tmp_path)
             except Exception:

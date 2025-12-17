@@ -59,11 +59,9 @@ Ik wil de volgende projecten bedanken voor het vrij beschikbaar stellen van code
    [https://github.com/miguelgrinberg/microblog/tree/main/app](https://github.com/miguelgrinberg/microblog/tree/main/app)  
    [https://blog.miguelgrinberg.com/post/implementing-user-comments-with-sqlalchemy](https://blog.miguelgrinberg.com/post/implementing-user-comments-with-sqlalchemy)
 
-4. eerste filter:  
-   [https://github.com/SwastikGowdaL/Mod-Guard](https://github.com/SwastikGowdaL/Mod-Guard)
-
 5. LLM:  
-   [https://github.com/SalesforceAIResearch/BingoGuard](https://github.com/SalesforceAIResearch/BingoGuard)
+   ChatGPT van open AI wordt gebruikt voor text en image content moderatie.
 
 
-
+Link naar screencast:
+https://video.uva.nl/media/Eindproject+minor+programmeren/0_5nc5zzyr
